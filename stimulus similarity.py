@@ -13,12 +13,16 @@ import itertools, csv
 from random import shuffle
 import numpy as np
 
-win = visual.Window([1024,768],fullscr=False,allowGUI=True) #psychopy window
-c = 0.08 #N/T similarity 0< c <0.2
-d1=0.03; #N/N similarity 0< d1 <c
-d2 = [c-d1,d1-c]
 
-def make_stim (Type, pos=(0,0)):
+win = visual.Window([1024,768],fullscr=False,allowGUI=True) #psychopy window
+c = 0.1 # mean N/T similarity 0< c <0.2
+d1=0.05; # D1/T similarity 0< d1 <c
+d2 = [2*c-d1,d1-2*c]
+p = [abs(d1-d2[0]), abs(d1-d2[1])] # N/N similarity
+print('mean N/T similarity: ',c)
+print('N/N similarity: ',p)
+
+def make_stim (Type, pos=(0,0),size=0.15):
     stimVert0 = np.array([(-.2,-.2),(-.2,-.15),(.2,-.15),(.2,-.2)]) #horizontal bar
     stimVert1 = np.array([(-.025,-.15),(-.025,.25),(.025,.25),(.025,-.15)]) #vertical bar target
     stimVert2 =  np.array([(-.025-d1,-.15),(-.025-d1,.25),(.025-d1,.25),(.025-d1,-.15)])#vertical bar D1
@@ -26,16 +30,16 @@ def make_stim (Type, pos=(0,0)):
     stimVert4 =  np.array([(-.025-d2[1],-.15),(-.025-d2[1],.25),(.025-d2[1],.25),(.025-d2[1],-.15)])#vertical bar D2_2
     if Type=='T':
         return visual.ShapeStim(win, vertices=[stimVert0,stimVert1], 
-                                 fillColor='darkgray', lineWidth=0, size=.2,pos=pos, autoDraw=True,units='norm')
+                                 fillColor='darkgray', lineWidth=0, size=size,pos=pos, autoDraw=True,units='norm')
     if Type=='D1':
         return visual.ShapeStim(win, vertices=[stimVert0,stimVert2], 
-                                 fillColor='darkgray', lineWidth=0, size=.2,pos=pos,autoDraw=True,units='norm')
+                                 fillColor='darkgray', lineWidth=0, size=size,pos=pos,autoDraw=True,units='norm')
     if Type=='D2_1':
         return visual.ShapeStim(win, vertices=[stimVert0,stimVert3], 
-                                 fillColor='darkgray', lineWidth=0, size=.2,pos=pos,autoDraw=True,units='norm')
+                                 fillColor='darkgray', lineWidth=0, size=size,pos=pos,autoDraw=True,units='norm')
     if Type=='D2_2':
         return visual.ShapeStim(win, vertices=[stimVert0,stimVert4], 
-                                 fillColor='darkgray', lineWidth=0, size=.2,pos=pos,autoDraw=True,units='norm')
+                                 fillColor='darkgray', lineWidth=0, size=size,pos=pos,autoDraw=True,units='norm')
 
 if __name__ == '__main__':
     #ready=visual.TextStim(win,'ready?', color=(1.0,1.0,1.0),units='norm', height=0.2)
@@ -46,8 +50,8 @@ if __name__ == '__main__':
     thanks=visual.TextStim(win,'thank you for your participation, all tests are concluded',font='Helvetica', alignHoriz='center',
                           alignVert='center', units='norm', height=0.1,color=(1.0,1.0,1.0)) #thank the subject for their participation
 
-    stimTpos1 = list(itertools.product([-.6,-.45,-.3,-.15],[-.3,-.15,0.0,.15])) #set1
-    stimTpos2 = list(itertools.product([.6,.45,.3,.15],[-.3,-.15,0.0,.15])) #set2
+    stimTpos1 = list(itertools.product(np.linspace(-0.6,-0.1,num=6,endpoint=False),np.linspace(-0.3,0.3,num=6,endpoint=False))) #set1
+    stimTpos2 = list(itertools.product(abs(np.linspace(-0.6,-0.1,num=6,endpoint=False)),np.linspace(-0.3,0.3,num=6,endpoint=False))) #set2
 
     stimTlist1 = []; stimTlist2 = []
 
