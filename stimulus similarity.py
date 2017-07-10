@@ -22,23 +22,23 @@ p = [abs(d1-d2[0]), abs(d1-d2[1])] # N/N similarity
 print('mean N/T similarity: ',c)
 print('N/N similarity: ',p)
 
-def make_stim (Type, pos=(0,0),size=0.15):
+def make_stim (Type, pos=(0,0),size=0.15, lw=2):
     stimVert1 = [(0, 0), (.2, 0), (.2, .4),(.2, 0),(.4,0)] #target
     stimVert2 = [(0, 0), (.2-d1, 0), (.2-d1, .4),(.2-d1, 0),(.4,0)] #d1
     stimVert3 = [(0, 0), (.2-d2[0], 0), (.2-d2[0], .4),(.2-d2[0], 0),(.4,0)] #d2_1
     stimVert4 = [(0, 0), (.2-d2[1], 0), (.2-d2[1], .4),(.2-d2[1], 0),(.4,0)] #d2_2
     
     if Type=='T':
-        return visual.ShapeStim(win, vertices=stimVert1, closeShape=False, lineWidth=4, pos=pos, ori=0,size=size,autoDraw=True)
+        return visual.ShapeStim(win, vertices=stimVert1, closeShape=False, lineWidth=lw, pos=pos, ori=0,size=size,autoDraw=True)
         
     if Type=='D1':
-        return visual.ShapeStim(win, vertices=stimVert2, closeShape=False, lineWidth=4, pos=pos, ori=0,size=size,autoDraw=True)
+        return visual.ShapeStim(win, vertices=stimVert2, closeShape=False, lineWidth=lw, pos=pos, ori=0,size=size,autoDraw=True)
 
     if Type=='D2_1':
-        return visual.ShapeStim(win, vertices=stimVert3, closeShape=False, lineWidth=4, pos=pos, ori=0,size=size,autoDraw=True)
+        return visual.ShapeStim(win, vertices=stimVert3, closeShape=False, lineWidth=lw, pos=pos, ori=0,size=size,autoDraw=True)
 
     if Type=='D2_2':
-        return visual.ShapeStim(win, vertices=stimVert4, closeShape=False, lineWidth=4, pos=pos, ori=0,size=size,autoDraw=True)
+        return visual.ShapeStim(win, vertices=stimVert4, closeShape=False, lineWidth=lw, pos=pos, ori=0,size=size,autoDraw=True)
 
 
 if __name__ == '__main__':
@@ -67,9 +67,11 @@ if __name__ == '__main__':
     shuffle(stimTlist1)
     shuffle(stimTlist2)
 
+    [x.setPos(y) for x,y in zip(stimTlist1,stimTpos1)]
+    [x.setPos(y) for x,y in zip(stimTlist2,stimTpos2)]
     for i in range(len(stimTlist1)):
-        stimTlist1[i].pos = stimTpos1[i]
-        stimTlist2[i].pos = stimTpos2[i]
+#        stimTlist1[i].pos = stimTpos1[i]
+#        stimTlist2[i].pos = stimTpos2[i]
         stimTlist1[i].setOri(stimTori1[i])
         stimTlist1[i].setOri(stimTori1[i])
         
