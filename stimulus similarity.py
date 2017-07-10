@@ -23,23 +23,23 @@ print('mean N/T similarity: ',c)
 print('N/N similarity: ',p)
 
 def make_stim (Type, pos=(0,0),size=0.15):
-    stimVert0 = np.array([(-.2,-.2),(-.2,-.15),(.2,-.15),(.2,-.2)]) #horizontal bar
-    stimVert1 = np.array([(-.025,-.15),(-.025,.25),(.025,.25),(.025,-.15)]) #vertical bar target
-    stimVert2 =  np.array([(-.025-d1,-.15),(-.025-d1,.25),(.025-d1,.25),(.025-d1,-.15)])#vertical bar D1
-    stimVert3 =  np.array([(-.025-d2[0],-.15),(-.025-d2[0],.25),(.025-d2[0],.25),(.025-d2[0],-.15)])#vertical bar D2
-    stimVert4 =  np.array([(-.025-d2[1],-.15),(-.025-d2[1],.25),(.025-d2[1],.25),(.025-d2[1],-.15)])#vertical bar D2_2
+    stimVert1 = [(0, 0), (.2, 0), (.2, .4),(.2, 0),(.4,0)] #target
+    stimVert2 = [(0, 0), (.2-d1, 0), (.2-d1, .4),(.2-d1, 0),(.4,0)] #d1
+    stimVert3 = [(0, 0), (.2-d2[0], 0), (.2-d2[0], .4),(.2-d2[0], 0),(.4,0)] #d2_1
+    stimVert4 = [(0, 0), (.2-d2[1], 0), (.2-d2[1], .4),(.2-d2[1], 0),(.4,0)] #d2_2
+    
     if Type=='T':
-        return visual.ShapeStim(win, vertices=[stimVert0,stimVert1], 
-                                 fillColor='darkgray', lineWidth=0, size=size,pos=pos, autoDraw=True,units='norm')
+        return visual.ShapeStim(win, vertices=stimVert1, closeShape=False, lineWidth=4, pos=pos, ori=0,size=size,autoDraw=True)
+        
     if Type=='D1':
-        return visual.ShapeStim(win, vertices=[stimVert0,stimVert2], 
-                                 fillColor='darkgray', lineWidth=0, size=size,pos=pos,autoDraw=True,units='norm')
+        return visual.ShapeStim(win, vertices=stimVert2, closeShape=False, lineWidth=4, pos=pos, ori=0,size=size,autoDraw=True)
+
     if Type=='D2_1':
-        return visual.ShapeStim(win, vertices=[stimVert0,stimVert3], 
-                                 fillColor='darkgray', lineWidth=0, size=size,pos=pos,autoDraw=True,units='norm')
+        return visual.ShapeStim(win, vertices=stimVert3, closeShape=False, lineWidth=4, pos=pos, ori=0,size=size,autoDraw=True)
+
     if Type=='D2_2':
-        return visual.ShapeStim(win, vertices=[stimVert0,stimVert4], 
-                                 fillColor='darkgray', lineWidth=0, size=size,pos=pos,autoDraw=True,units='norm')
+        return visual.ShapeStim(win, vertices=stimVert4, closeShape=False, lineWidth=4, pos=pos, ori=0,size=size,autoDraw=True)
+
 
 if __name__ == '__main__':
     #ready=visual.TextStim(win,'ready?', color=(1.0,1.0,1.0),units='norm', height=0.2)
@@ -50,9 +50,9 @@ if __name__ == '__main__':
     thanks=visual.TextStim(win,'thank you for your participation, all tests are concluded',font='Helvetica', alignHoriz='center',
                           alignVert='center', units='norm', height=0.1,color=(1.0,1.0,1.0)) #thank the subject for their participation
 
-    stimTpos1 = list(itertools.product(np.linspace(-0.6,-0.1,num=6,endpoint=False),np.linspace(-0.3,0.3,num=6,endpoint=False))) #set1
-    stimTpos2 = list(itertools.product(abs(np.linspace(-0.6,-0.1,num=6,endpoint=False)),np.linspace(-0.3,0.3,num=6,endpoint=False))) #set2
-
+    stimTpos1 = list(itertools.product(np.linspace(-0.6,-0.1,num=6),np.linspace(-0.3,0.3,num=6))) #set1
+    stimTpos2 = list(itertools.product(abs(np.linspace(-0.6,-0.1,num=6)),np.linspace(-0.3,0.3,num=6))) #set2
+    stimTori1 = list(np.linspace(10,30,num=36))
     stimTlist1 = []; stimTlist2 = []
 
     for n in range((len(stimTpos1)-1)/2):
@@ -70,6 +70,8 @@ if __name__ == '__main__':
     for i in range(len(stimTlist1)):
         stimTlist1[i].pos = stimTpos1[i]
         stimTlist2[i].pos = stimTpos2[i]
+        stimTlist1[i].setOri(stimTori1[i])
+        stimTlist1[i].setOri(stimTori1[i])
         
 #    stimVertL = np.array([(-.2,-.2),(-.2,.25),(-.15,.25),(-.15,-.15),(.2,-.15),(.2,-.2)])
 #    stimL = visual.ShapeStim(win, vertices=stimVert3, 
