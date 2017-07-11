@@ -13,7 +13,7 @@ to-do:
 #imports
 from psychopy import visual,core,gui,event
 from datetime import datetime
-import itertools, csv, sys, os.path
+import itertools, csv, sys, os.path, traceback
 from random import shuffle
 import numpy as np
 from copy import copy
@@ -25,7 +25,7 @@ class Stimuli:
         self.win = win
         self.timing = timing
         self.orientation=orientation
-        
+        self.ready = visual.TextStim(win,'ready?', color=(1.0,1.0,1.0),units='norm', height=0.2)
         self.fixation = visual.TextStim(self.win, text='+',
                                         alignHoriz='center',
                                         alignVert='center', units='norm',
@@ -45,16 +45,19 @@ class Stimuli:
         vertice = []
         vertice.append([(0, 0), (.2, 0), (.2, .4),(.2, 0),(.4,0)])
         vertice.append([(0, 0), (.2-d1, 0), (.2-d1, .4),(.2-d1, 0),(.4,0)])
-        vertice.append([(0, 0), (.2-d2[0], 0), (.2-d2[0], .4),(.2-d2[0], 0),(.4,0)])
+        vertice.append([(0, 0), (.2-d2[0], 0), (.2-d2[0], .4),(.2-d2[0], 0),(.4,0)]) 
         vertice.append([(0, 0), (.2-d2[1], 0), (.2-d2[1], .4),(.2-d2[1], 0),(.4,0)])
         if Type=='t':
-            return visual.ShapeStim(self.win, vertices=vertice[0],
+            self.target = visual.ShapeStim(self.win, vertices=vertice[0],
                                  closeShape=False, lineWidth=lw, 
                                  ori=0,size=size,name='target',autoDraw=False)
+            return self.target
         if Type=='d1':
             return visual.ShapeStim(self.win, vertices=vertice[1],
                                  closeShape=False, lineWidth=lw, 
                                  ori=0,size=size,name='d1',autoDraw=False)
+
+            
         if Type=='d2_1':
             return visual.ShapeStim(self.win, vertices=vertice[2],
                                  closeShape=False, lineWidth=lw, 
@@ -64,14 +67,16 @@ class Stimuli:
                                  closeShape=False, lineWidth=lw, 
                                  ori=0,size=size,name='d2_2',autoDraw=False)
  
-
+            
     def get_input(self, max_wait=3.0, keylist=None):
+
         key = event.waitKeys(maxWait=max_wait, keyList=keylist,timeStamped=True)
         if key is not None:
-            key = key[0]
-        time = key[0][1]
+            key = key[0][0]
+        time = core.getTime()
 
         return (key, time)
+
 
 
     def draw_fixation(self):
@@ -81,19 +86,19 @@ class Stimuli:
         self.win.flip()
 
     #adjust distractor difficulty and draw search array 
-    def search_array(self, trial):#trial contains [c, d1, ori, hard or easy(d1 or d2)]
+    def search_array(self, trial, setSize=6):#trial contains [c, d1, ori, hard or easy(d1 or d2)]
         self.draw_fixation()
         draw_objs = []
         
-        stimpos = list(itertools.product(np.linspace(-0.3,-0.3,num=6),np.linspace(-0.3,0.3,num=6))) #set1
-        stimori = list(np.random.randint(2,size=6**2))
+        stimpos = list(itertools.product(np.linspace(-0.3,0.3,num=setSize),np.linspace(-0.3,0.3,num=setSize))) #set1
+        stimori = list(np.random.randint(2,size=setSize**2))
         map(lambda x:x*10,stimori)
         for n in range((len(stimpos)-1)/2):
-            draw_objs.append(make_stim(c=trial['c'], d1=trial['d1'], Type='d1'))
-            draw_objs.append(make_stim(c=trial['c'], d1=trial['d1'], Type=trial['level']))
-            
-        draw_objs.append(make_stim(c=trial['c'], d1=trial['d1'], Type='T'))
-        draw_objs.append(make_stim(c=trial['c'], d1=trial['d1'], Type='d1'))
+            draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type='d1'))
+            draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type=trial['level']))
+        draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type='t'))
+        draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type='d1'))
+ 
         shuffle( draw_objs)
         [x.setPos(y) for x,y in zip(draw_objs,stimpos)]
         [x.setOri(y) for x,y in zip(draw_objs,stimori)]
@@ -106,6 +111,7 @@ class Stimuli:
             pass
         else:
             print('quiting experiment')
+            win.close()
             core.quit() #change to close() for saving files
         map(autoDraw_off, draw_objs)
         self.win.flip()
@@ -116,13 +122,14 @@ class Stimuli:
             pass
         else:
             print('quiting experiment')
+            win.close()
             core.quit() #change to close() for saving files
             
         #draw the rotated target and ask for a binary response
-    def recall(self):
+    def recall(self, orientation):
         target_probe = copy(self.target)
-        target_probe.ori = self.orientation
-        if self.orientation >=0:
+        target_probe.ori = orientation
+        if orientation >=0:
             answer = 'clockwise'
         else:
             answer = 'anticlockwise'
@@ -136,6 +143,7 @@ class Stimuli:
             return ('timeout', answer, resp_time-start_time)
         elif key == 'escape':
             print('quiting experiment')
+            win.close()
             core.quit() #change to close() for saving files
         else:
             return (self.recall_keymap[key], answer, resp_time-start_time)#return response, correct answer &RT
@@ -158,10 +166,11 @@ class Stimuli:
         if key is not None:
             if key[0] == 'escape':
                 print('quiting experiment')
+                win.close()
                 core.quit() #change to close() for saving files
         self.win.flip()
 
-    def text(self, text):
+    def text(self,  text,max_wait=3.0):
         display_text = visual.TextStim(self.win, text=text,
                                        font='Helvetica', alignHoriz='center',
                                        alignVert='center', units='norm',
@@ -174,7 +183,8 @@ class Stimuli:
         if key is not None:
             if key[0] == 'escape':
                 print('quiting experiment')
-                core.quit() #change to close() for saving files
+                win.close()
+                core.quit()
         self.win.flip()
 
 def get_settings():
@@ -204,121 +214,79 @@ def autoDraw_off(stim):
     return stim
 
 def run():
-    (expname, sid, numblocks, speed, mark_mode, input_mode) = get_settings()
+#    (expname, sid, numblocks, speed, mark_mode, input_mode) = get_settings()
     win = get_window()
 
     win.flip()
     timing = {'fixation': 0.5,
-              'search': 2.0,
+              'search': 2,
               'blank': 2,
-              'recall': 3 / speed,
-              'intertrial': 0.5 / speed}
-    colors = {'red': (227, 2, 24),
-              'green': (95, 180, 46),
-              'blue': (48, 62, 152),
-              'yellow': (251, 189, 18)}
-    orientation = {} #staircase
-    constant = {}
-    d1={} 
-    stim = Stimuli(win, timing, colors, mark_mode, input_mode)
+              'recall': 3 ,
+              'intertrial': 0.5}
+#
+    orientation = [30,15,10,5] #staircase
+    orientation2 = [x*-1 for x in orientation]
+    orientation=orientation+ orientation2
+    constant = [0.12,0.08]
+    d1=[0.07,0.05]
+    stim = Stimuli(win, timing, orientation)
 
-    stim.text_and_stim_keypress('First you will see a circle. Remember its color.',
-                                stim=stim.cue)
-    stim.text_and_stim_keypress('Afterward, find the tilted line.\nPress 1 if the line is tilted left. Press 2 if the line is tilted right.',
-                                [stim.search['top'], stim.search['bot'],
-                                 stim.line[('top', 'left')], stim.line[('bot', 'straight')]])
-    stim.text_and_stim_keypress('At the end, we will ask you the color of the first circle you saw.', stim=stim.memory[1:])
-    stim.text_and_stim_keypress('Press any key when ready to begin!')
-    # the first color is the search target, second is the distractor
-    trial_types = [('red', 'blue'), ('red', 'green'), ('red', 'yellow'),
-                   ('blue', 'red'), ('blue', 'green'), ('blue', 'yellow'),
-                   ('green', 'red'), ('green', 'blue'), ('green', 'yellow'),
-                   ('yellow', 'red'), ('yellow', 'green'), ('yellow', 'blue')]
-    block_list = []
+    stim.text_and_stim_keypress('Welcome to the attention and working memory study',
+                                stim=stim.ready)
+    
 
     # construct blocks
-    for block_num in range(numblocks):
-        block = {}
-        block['speed_factor'] = speed
-        block['block_num'] = block_num
-        block['cue_color'] = random.choice(colors.keys())
-        random.shuffle(trial_types)
-        trial_list = []
-        # construct trials
-        for trial_num in range(len(trial_types)):
-            trial = {}
-            trial['trial_num'] = trial_num
-            trial['target_type'] = random.choice(['left', 'right'])
-            trial['search_colors'] = trial_types[trial_num]
-            target_col = trial['search_colors'][0]
-            distract_col = trial['search_colors'][1]
-            if block['cue_color'] == target_col:
-                trial['validity'] = 'valid'
-            elif block['cue_color'] == distract_col:
-                trial['validity'] = 'invalid'
-            else:
-                trial['validity'] = 'neutral'
-            trial['target_pos'] = random.choice(['top', 'bot'])
-            trial_list.append(trial)
-        block['trials'] = trial_list
-        block_list.append(block)
-
-    # sequence to mark beginning of trial
-    stim.mark_task('begin')
-    core.wait(1.0)
-
+#    for block_num in range(numblocks):
+#        block = {}
+#        block['speed_factor'] = speed
+#        block['block_num'] = block_num
+#        block['cue_color'] = random.choice(colors.keys())
+#        random.shuffle(trial_types)
+#        trial_list = []
+    # construct trials
+    trial_type = list(itertools.product(constant,d1,orientation))
+    trial_list=[]
+    for i in range(len(trial_type)):
+        trial = {}
+        trial['c'] = trial_type[i][0]
+        trial['d1'] = trial_type[i][1]
+        trial['ori'] = trial_type[i][2]
+        trial['level'] = 'd2_2'
+        trial_list.append(trial)
+    shuffle(trial_list)
     # run trials
-    for block_num in range(len(block_list)):
-        block = block_list[block_num]
-        block['fixation_on'] = core.getTime()
-        stim.draw_fixation()
-        block['fixation_off'] = core.getTime()
-        block['cue_on'] = core.getTime()
-        block['cue_off'] = stim.draw_cue(block['cue_color'])
-        for trial_num in range(len(block['trials'])):
-            trial = block['trials'][trial_num]
-            resp, start_time, off_time, end_time = stim.do_search(trial)
-            block['trials'][trial_num]['search_response'] = resp
-            block['trials'][trial_num]['search_start_time'] = start_time
-            block['trials'][trial_num]['search_off_time'] = off_time
-            block['trials'][trial_num]['search_resp_time'] = end_time
-            corr = (resp == trial['target_type'])
-            block['trials'][trial_num]['search_correct'] = corr
+    for i, trial in enumerate(trial_list):
+        try:
+            stim.search_array(trial)
+            resp, answer, rt = stim.recall(trial['ori'])
+            corr = (resp == answer)
             if not corr:
                 if resp == 'timeout':
                     stim.text('Timeout')
                 else:
                     stim.text('Incorrect')
             core.wait(timing['intertrial'])
-        chosen_col, start_time, end_time = stim.do_memory()
-        block_list[block_num]['mem_response'] = chosen_col
-        block_list[block_num]['mem_response_start'] = start_time
-        block_list[block_num]['mem_response_resp'] = end_time
-        corr = (chosen_col == block['cue_color'])
-        block_list[block_num]['mem_correct'] = corr
-        if corr:
-            stim.text('Correct!')
-        elif chosen_col == 'timeout':
-            stim.text('Timeout')
-        else:
-            stim.text('Incorrect')
-        core.wait(timing['intertrial'])
-        with open(expname + '_' + sid + '.json', 'a') as f:
-            f.write(json.dumps(block))
-            f.write('\n')
-        if block_num < len(block_list) - 1:
-            stim.text_and_stim_keypress('Press escape to quit.', max_wait=2.0)
-        else:
-            stim.text_and_stim_keypress('Congratulations! You have finished.',
+        except Exception:
+            traceback.print_exc()
+            win.close()
+            core.quit()
+            
+            
+        
+#        with open(expname + '_' + sid + '.json', 'a') as f:
+#            f.write(json.dumps(block))
+#            f.write('\n')
+        
+    stim.text_and_stim_keypress('Congratulations! You have finished.',
                                         max_wait=2.0)
     return win
 
     '''
     cleanup/file closing/participant thank you message
     '''
-def close(fname,win):
+def close(win, fname=None):
 
-    fname.close() #close the output file
+    #fname.close() #close the output file
     thanks = visual.TextStim(win,'thank you for your participation',font='Helvetica', alignHoriz='center',
                           alignVert='center', units='norm', height=0.1,color=(1.0,1.0,1.0))    
     thanks.draw()
@@ -332,5 +300,5 @@ def close(fname,win):
 
 if __name__ == '__main__':
     win = run()
-    fname = get_settings()
-    close(fname,win)
+    get_settings()
+    close(win)
