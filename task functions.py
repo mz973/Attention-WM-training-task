@@ -25,7 +25,7 @@ class Stimuli:
         self.win = win
         self.timing = timing
         self.orientation=orientation
-        self.ready = visual.TextStim(win,'ready?', color=(1.0,1.0,1.0),units='norm', height=0.2)
+        self.ready = visual.TextStim(win,'ready?', color=(1.0,1.0,1.0),units='norm', height=0.2, pos=(0,0))
         self.fixation = visual.TextStim(self.win, text='+',
                                         alignHoriz='center',
                                         alignVert='center', units='norm',
@@ -148,7 +148,7 @@ class Stimuli:
         else:
             return (self.recall_keymap[key], answer, resp_time-start_time)#return response, correct answer &RT
 
-    def text_and_stim_keypress(self, text, stim=None, max_wait=float('inf')):
+    def text_and_stim_keypress(self, text, stim=None,pos=(0,-0.8), max_wait=float('inf')):
         if stim is not None:
             if type(stim) == list:
                 map(lambda x: x.draw(), stim)
@@ -157,7 +157,7 @@ class Stimuli:
         display_text = visual.TextStim(self.win, text=text,
                                        font='Helvetica', alignHoriz='center',
                                        alignVert='center', units='norm',
-                                       pos=(0, -0.8), height=0.1,
+                                       pos=pos, height=0.1,
                                        color=[255, 255, 255], colorSpace='rgb255',
                                        wrapWidth=2)
         display_text.draw()
@@ -174,7 +174,7 @@ class Stimuli:
         display_text = visual.TextStim(self.win, text=text,
                                        font='Helvetica', alignHoriz='center',
                                        alignVert='center', units='norm',
-                                       pos=(0, 0), height=0.1,
+                                       pos=(0,-0.8), height=0.1,
                                        color=[255, 255, 255], colorSpace='rgb255',
                                        wrapWidth=2)
         display_text.draw()
@@ -231,7 +231,7 @@ def run():
     d1=[0.07,0.05]
     stim = Stimuli(win, timing, orientation)
 
-    stim.text_and_stim_keypress('Welcome to the attention and working memory study',
+    stim.text_and_stim_keypress('Welcome to the attention and working memory study',pos=(0,0.7),
                                 stim=stim.ready)
     
 
