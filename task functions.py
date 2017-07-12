@@ -17,6 +17,7 @@ import itertools, csv, sys, os.path, traceback
 from random import shuffle
 import numpy as np
 from copy import copy
+from math import sqrt
 
 
 class Stimuli:
@@ -25,14 +26,14 @@ class Stimuli:
         self.win = win
         self.timing = timing
         self.orientation=orientation
-        self.ready = visual.TextStim(win,'ready?', color=(1.0,1.0,1.0),units='norm', height=0.2, pos=(0,0))
+        self.ready = visual.TextStim(win,'ready?', color=(1.0,1.0,1.0),units='norm', height=0.1, pos=(0,0))
         self.fixation = visual.TextStim(self.win, text='+',
                                         alignHoriz='center',
                                         alignVert='center', units='norm',
-                                        pos=(0, 0), height=0.3,
+                                        pos=(0, 0), height=0.2,
                                         color=[255, 255, 255], colorSpace='rgb255',
                                         wrapWidth=2)
-        self.probe = visual.TextStim(self.win,text='clokwise or anticlockwise?',
+        self.probe = visual.TextStim(self.win,text='clockwise or anticlockwise?',
                                      font='Helvetica', alignHoriz='center', alignVert='center',
                                      units='norm',pos=(0, 0.5), height=0.1,
                                      color=[255, 255, 255], colorSpace='rgb255',wrapWidth=2)
@@ -40,7 +41,7 @@ class Stimuli:
         
 #        c  mean N/T similarity 0< c <0.2
 #        d1# D1/T similarity 0< d1 <c
-    def make_stim (self, c, d1, Type,size=0.15, lw=2):  
+    def make_stim (self, c, d1, Type,size=0.2, lw=1.5, ori=0):  
         d2 = [2*c-d1,d1-2*c]
         vertice = []
         vertice.append([(0, 0), (.2, 0), (.2, .4),(.2, 0),(.4,0)])
@@ -50,24 +51,32 @@ class Stimuli:
         if Type=='t':
             self.target = visual.ShapeStim(self.win, vertices=vertice[0],
                                  closeShape=False, lineWidth=lw, 
-                                 ori=0,size=size,name='target',autoDraw=False)
+                                 ori=ori,size=size,pos=(0,0),name='target',autoDraw=False)
             return self.target
         if Type=='d1':
             return visual.ShapeStim(self.win, vertices=vertice[1],
                                  closeShape=False, lineWidth=lw, 
-                                 ori=0,size=size,name='d1',autoDraw=False)
+                                 ori=ori,size=size,pos=(0,0),name='d1',autoDraw=False)
 
             
         if Type=='d2_1':
             return visual.ShapeStim(self.win, vertices=vertice[2],
                                  closeShape=False, lineWidth=lw, 
-                                 ori=0,size=size,name='d2_1',autoDraw=False)
+                                 ori=ori,size=size,pos=(0,0),name='d2_1',autoDraw=False)
         if Type=='d2_2':
             return visual.ShapeStim(self.win, vertices=vertice[3],
                                  closeShape=False, lineWidth=lw, 
-                                 ori=0,size=size,name='d2_2',autoDraw=False)
+                                 ori=ori,size=size,pos=(0,0),name='d2_2',autoDraw=False)
  
-            
+    def set_ori(self,obj, angle):
+        an = angle*np.pi/180
+        vertice = obj.vertices
+        x = vertice[1][0]
+        beta = an-np.arctan((.2-x)/.4)
+        vertice = [(.2-.2*np.cos(an), .2*np.sin(an)), (.2-np.cos(an)*(.2-x), np.sin(an)*(.2-x)), (.2+sqrt(.4**2+(.2-x)**2)*np.sin(beta), sqrt(.4**2+(.2-x)**2)*np.cos(beta)), (.2-np.cos(an)*(.2-x), np.sin(an)*(.2-x)),(.2+.2*np.cos(an),-.2*np.sin(an))]
+        obj.setVertices(vertice)
+        
+        
     def get_input(self, max_wait=3.0, keylist=None):
 
         key = event.waitKeys(maxWait=max_wait, keyList=keylist,timeStamped=True)
@@ -86,22 +95,22 @@ class Stimuli:
         self.win.flip()
 
     #adjust distractor difficulty and draw search array 
-    def search_array(self, trial, setSize=6):#trial contains [c, d1, ori, hard or easy(d1 or d2)]
+    def search_array(self, trial, ori=0,setSize=6):#trial contains [c, d1, ori, hard or easy(d1 or d2)]
         self.draw_fixation()
         draw_objs = []
         
-        stimpos = list(itertools.product(np.linspace(-0.3,0.3,num=setSize),np.linspace(-0.3,0.3,num=setSize))) #set1
-        stimori = list(np.random.randint(2,size=setSize**2))
+        stimpos = list(itertools.product(np.linspace(-0.1*setSize/2,0.1*setSize/2,num=setSize),np.linspace(-0.1*setSize/2,0.1*setSize/2,num=setSize))) #set1
+        stimori = list(15*np.random.randint(2,size=setSize**2))
         map(lambda x:x*10,stimori)
         for n in range((len(stimpos)-1)/2):
-            draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type='d1'))
-            draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type=trial['level']))
-        draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type='t'))
-        draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type='d1'))
+            draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type='d1',ori=ori))
+            draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type=trial['level'],ori=ori))
+        draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type='t',ori=ori))
+        draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type='d1',ori=ori))
  
         shuffle( draw_objs)
         [x.setPos(y) for x,y in zip(draw_objs,stimpos)]
-        [x.setOri(y) for x,y in zip(draw_objs,stimori)]
+        [x.setOri(y)for x,y in zip(draw_objs,stimori)]
         
         map(autoDraw_on, draw_objs)
         self.win.flip()
@@ -128,7 +137,8 @@ class Stimuli:
         #draw the rotated target and ask for a binary response
     def recall(self, orientation):
         target_probe = copy(self.target)
-        target_probe.ori = orientation
+        an = target_probe.ori
+        self.set_ori(target_probe,orientation+an)
         if orientation >=0:
             answer = 'clockwise'
         else:
@@ -202,8 +212,8 @@ def get_settings():
 #    return outFile
 
 def get_window():
-    return visual.Window([1024,768],
-        winType='pyglet', monitor="testMonitor",fullscr=False, colorSpace='rgb255')
+    return visual.Window([800,800],
+        winType='pyglet', monitor="testMonitor",fullscr=False, colorSpace='rgb',color=(0,0,0),units='norm')
 
 def autoDraw_on(stim):
     stim.autoDraw = True
@@ -219,16 +229,16 @@ def run():
 
     win.flip()
     timing = {'fixation': 0.5,
-              'search': 2,
+              'search': 6,
               'blank': 2,
-              'recall': 3 ,
+              'recall': 4 ,
               'intertrial': 0.5}
 #
-    orientation = [30,15,10,5] #staircase
+    orientation = [5,10,15] #staircase
     orientation2 = [x*-1 for x in orientation]
     orientation=orientation+ orientation2
-    constant = [0.12,0.08]
-    d1=[0.07,0.05]
+    constant = [0.1]
+    d1=[0.08,0.05]
     stim = Stimuli(win, timing, orientation)
 
     stim.text_and_stim_keypress('Welcome to the attention and working memory study',pos=(0,0.7),
@@ -257,7 +267,7 @@ def run():
     # run trials
     for i, trial in enumerate(trial_list):
         try:
-            stim.search_array(trial)
+            stim.search_array(trial,setSize=4)
             resp, answer, rt = stim.recall(trial['ori'])
             corr = (resp == answer)
             if not corr:
@@ -299,6 +309,7 @@ def close(win, fname=None):
 
 
 if __name__ == '__main__':
+    #get_settings()
     win = run()
-    get_settings()
+    
     close(win)
