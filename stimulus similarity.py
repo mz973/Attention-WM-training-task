@@ -14,32 +14,35 @@ from random import shuffle
 import numpy as np
 
 
-win = visual.Window([1024,768],fullscr=False,allowGUI=True) #psychopy window
-c = 0.1 # mean N/T similarity 0< c <0.2
-d1=0.05; # D1/T similarity 0< d1 <c
+win = visual.Window([900,900],fullscr=False,allowGUI=True) #psychopy window
+c = 0.2 # mean N/T similarity 0< c <0.2
+d1=0.2; # D1/T similarity 0< d1 <c
 d2 = [2*c-d1,d1-2*c]
 p = [abs(d1-d2[0]), abs(d1-d2[1])] # N/N similarity
 print('mean N/T similarity: ',c)
 print('N/N similarity: ',p)
 
-def make_stim (Type, pos=(0,0),size=0.15):
+def make_stim (Type, pos=(0,0),size=0.15, lw=2.5):
+    angle =-30
     stimVert1 = [(0, 0), (.2, 0), (.2, .4),(.2, 0),(.4,0)] #target
     stimVert2 = [(0, 0), (.2-d1, 0), (.2-d1, .4),(.2-d1, 0),(.4,0)] #d1
     stimVert3 = [(0, 0), (.2-d2[0], 0), (.2-d2[0], .4),(.2-d2[0], 0),(.4,0)] #d2_1
     stimVert4 = [(0, 0), (.2-d2[1], 0), (.2-d2[1], .4),(.2-d2[1], 0),(.4,0)] #d2_2
-    
+    stimVert5 = [(.2-.2*np.cos(angle*np.pi/180), .2*np.sin(angle*np.pi/180)), (.2, 0), (.2+.4*np.sin(angle*np.pi/180), .4*np.cos(angle*np.pi/180)),(.2, 0),(.2+.2*np.cos(angle*np.pi/180),-.2*np.sin(angle*np.pi/180))]
     if Type=='T':
-        return visual.ShapeStim(win, vertices=stimVert1, closeShape=False, lineWidth=4, pos=pos, ori=0,size=size,autoDraw=True)
+        return visual.ShapeStim(win, vertices=stimVert1, closeShape=False, lineWidth=lw, pos=pos, ori=0,size=size,autoDraw=True)
         
     if Type=='D1':
-        return visual.ShapeStim(win, vertices=stimVert2, closeShape=False, lineWidth=4, pos=pos, ori=0,size=size,autoDraw=True)
+        return visual.ShapeStim(win, vertices=stimVert2, closeShape=False, lineWidth=lw, pos=pos, ori=0,size=size,autoDraw=True)
 
     if Type=='D2_1':
-        return visual.ShapeStim(win, vertices=stimVert3, closeShape=False, lineWidth=4, pos=pos, ori=0,size=size,autoDraw=True)
+        return visual.ShapeStim(win, vertices=stimVert3, closeShape=False, lineWidth=lw, pos=pos, ori=0,size=size,autoDraw=True)
 
     if Type=='D2_2':
-        return visual.ShapeStim(win, vertices=stimVert4, closeShape=False, lineWidth=4, pos=pos, ori=0,size=size,autoDraw=True)
+        return visual.ShapeStim(win, vertices=stimVert4, closeShape=False, lineWidth=lw, pos=pos, ori=0,size=size,autoDraw=True)
 
+    if Type=='30':
+        return visual.ShapeStim(win, vertices=stimVert5, closeShape=False, lineWidth=lw, pos=(0,0.8), ori=0,size=size,autoDraw=True)
 
 if __name__ == '__main__':
     #ready=visual.TextStim(win,'ready?', color=(1.0,1.0,1.0),units='norm', height=0.2)
@@ -67,19 +70,22 @@ if __name__ == '__main__':
     shuffle(stimTlist1)
     shuffle(stimTlist2)
 
+    [x.setPos(y) for x,y in zip(stimTlist1,stimTpos1)]
+    [x.setPos(y) for x,y in zip(stimTlist2,stimTpos2)]
     for i in range(len(stimTlist1)):
-        stimTlist1[i].pos = stimTpos1[i]
-        stimTlist2[i].pos = stimTpos2[i]
-        stimTlist1[i].setOri(stimTori1[i])
-        stimTlist1[i].setOri(stimTori1[i])
+#        stimTlist1[i].pos = stimTpos1[i]
+#        stimTlist2[i].pos = stimTpos2[i]
+       stimTlist1[i].setOri(stimTori1[i])
+       stimTlist1[i].setOri(stimTori1[i])
         
 #    stimVertL = np.array([(-.2,-.2),(-.2,.25),(-.15,.25),(-.15,-.15),(.2,-.15),(.2,-.2)])
 #    stimL = visual.ShapeStim(win, vertices=stimVert3, 
 #                             fillColor='darkgray', lineWidth=0, size=.3, pos=(.2, 0),units='norm')
     #ready.draw()
+    a=make_stim('30')
     win.flip()#initialize window 
 
-
+    
     while not event.getKeys():
         pass
 #        try:
