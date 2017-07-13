@@ -26,7 +26,7 @@ class Stimuli:
         self.win = win
         self.timing = timing
         self.orientation=orientation
-        self.ready = visual.TextStim(win,'ready?', color=(1.0,1.0,1.0),units='norm', height=0.1, pos=(0,0))
+        self.ready = visual.TextStim(win,'ready?', color=(1.0,1.0,1.0),units='norm', height=0.05, pos=(0,0))
         self.fixation = visual.TextStim(self.win, text='+',
                                         alignHoriz='center',
                                         alignVert='center', units='norm',
@@ -100,8 +100,11 @@ class Stimuli:
         draw_objs = []
         
         stimpos = list(itertools.product(np.linspace(-0.1*setSize/2,0.1*setSize/2,num=setSize),np.linspace(-0.1*setSize/2,0.1*setSize/2,num=setSize))) #set1
-        stimori = list(15*np.random.randint(2,size=setSize**2))
-        map(lambda x:x*10,stimori)
+        
+
+        stimori = np.random.choice([-10,10,-15,15,-20,20,-25,25,-30,30,-45,45])#randomly rotate the whole array
+        
+        #map(lambda x:x*10,stimori)
         for n in range((len(stimpos)-1)/2):
             draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type='d1',ori=ori))
             draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type=trial['level'],ori=ori))
@@ -110,8 +113,15 @@ class Stimuli:
  
         shuffle( draw_objs)
         [x.setPos(y) for x,y in zip(draw_objs,stimpos)]
-        [x.setOri(y)for x,y in zip(draw_objs,stimori)]
+        [x.setOri(stimori)  for x in draw_objs if x.name=='target' or x.name=='d1']
         
+        d2 = [2*trial['c']-trial['d1'],trial['d1']-2*trial['c']]
+        if trial['level'] =='d2_1':
+            p = abs(trial['d1']-d2[0])
+        else:
+            p= abs(trial['d1']-d2[1])
+        NN = visual.TextStim(self.win,p, color=(1.0,1.0,1.0),units='norm', height=0.05, pos=(0,-0.8))
+        NN.draw()
         map(autoDraw_on, draw_objs)
         self.win.flip()
         key, resp_time = self.get_input(max_wait=self.timing['search'],
@@ -238,7 +248,12 @@ def run():
     orientation2 = [x*-1 for x in orientation]
     orientation=orientation+ orientation2
     constant = [0.1]
-    d1=[0.08,0.05]
+    d1=[0.1,0.08,0.05]
+#    d2 = [2*c-d1,d1-2*c]
+#    NT = (d1['pos']+d2['pos'])/0.4+(d1['ori']+d2['ori'])/180 #normalized similarity?
+#    NN = [abs(d1-d2[0]), abs(d1-d2[1])] # N/N similarity
+#    print('mean N/T similarity: ',c)
+
     stim = Stimuli(win, timing, orientation)
 
     stim.text_and_stim_keypress('Welcome to the attention and working memory study',pos=(0,0.7),
@@ -262,6 +277,13 @@ def run():
         trial['d1'] = trial_type[i][1]
         trial['ori'] = trial_type[i][2]
         trial['level'] = 'd2_2'
+        trial_list.append(trial)
+    for i in range(len(trial_type)):
+        trial = {}
+        trial['c'] = trial_type[i][0]
+        trial['d1'] = trial_type[i][1]
+        trial['ori'] = trial_type[i][2]
+        trial['level'] = 'd2_1'
         trial_list.append(trial)
     shuffle(trial_list)
     # run trials
