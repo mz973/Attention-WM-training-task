@@ -135,7 +135,7 @@ class Stimuli:
         [x.setOri(stimori[0])  for x in draw_objs if x.name=='target' or x.name=='d1']
         [x.setOri(stimori[1])  for x in draw_objs if x.name=='d2_1' or x.name=='d2_2']
         
-        d2 = [2*trial['c']-trial['d1'],trial['d1']-2*trial['c']]
+        d2 = [2*trial['c']-trial['d1'],trial['d1']-2*trial['c']]#calculate NN similarity
         if trial['level'] =='d2_1':
             p = abs(trial['d1']-d2[0])
         else:
@@ -172,7 +172,7 @@ class Stimuli:
             map(autoDraw_off, draw_objs)  
             self.win.flip()
             if key is None:
-                return ('timeout', answer, resp_time-start_time)
+                return ('timeout', answer, resp_time-start_time,p)
             elif key == 'escape':
                 print('quiting experiment')
                 raise Exception('quiting')
@@ -195,7 +195,7 @@ class Stimuli:
                                         keylist=self.recall_keymap.keys() + ['escape'])
         self.win.flip()
         if key is None:
-            return ('timeout', answer, resp_time-start_time)
+            return ('timeout', answer, resp_time-start_time,p)
         elif key == 'escape':
             print('quiting experiment')
             raise Exception('quiting')
@@ -264,9 +264,7 @@ def run_vs(win, fi=None,setSize=4):
               'recall': 4 ,
               'intertrial': 1.0}
 #
-    orientation = [5,10,15] #replaced by staircase in the future
-    orientation2 = [x*-1 for x in orientation]
-    orientation=orientation+ orientation2
+    orientation = [0]
 
     #c [sqrt(0.005),0.2]; d1 [0.1,sqrt(4c**2-0.01)]
     constant = list(np.arange(0.08,0.2,0.02))
