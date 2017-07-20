@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
@@ -27,21 +27,21 @@ class Stimuli:
         self.win = win
         self.timing = timing
         self.orientation=orientation
-        self.ready = visual.TextStim(win,'ready?', color=(1.0,1.0,1.0),units='norm', height=0.05, pos=(0,0))
+        self.ready = visual.TextStim(win,'ready?', color=(1.0,1.0,1.0),units='norm', height=0.08, pos=(0,0),wrapWidth=1)
         self.fixation = visual.TextStim(self.win, text='+',
                                         alignHoriz='center',
                                         alignVert='center', units='norm',
-                                        pos=(0, 0), height=0.2,
+                                        pos=(0, 0), height=0.1,
                                         color=[255, 255, 255], colorSpace='rgb255',
-                                        wrapWidth=2)
+                                        wrapWidth=3)
         self.probe = visual.TextStim(self.win,text='clockwise or anticlockwise?',
                                      font='Helvetica', alignHoriz='center', alignVert='center',
-                                     units='norm',pos=(0, 0.8), height=0.1,
-                                     color=[255, 255, 255], colorSpace='rgb255',wrapWidth=1)
+                                     units='norm',pos=(0, 0.8), height=0.08,
+                                     color=[255, 255, 255], colorSpace='rgb255',wrapWidth=3)
         self.probe_vs = visual.TextStim(self.win,text='target present or not?',
                                      font='Helvetica', alignHoriz='center', alignVert='center',
-                                     units='norm',pos=(0, 0.8), height=0.1,
-                                     color=[255, 255, 255], colorSpace='rgb255',wrapWidth=1)
+                                     units='norm',pos=(0, 0.8), height=0.08,
+                                     color=[255, 255, 255], colorSpace='rgb255',wrapWidth=3)
         self.recall_keymap = {'z': 'clockwise', 'm': 'anticlockwise'}
         self.vs_keymap = {'z': 'yes', 'm': 'no'}
 #        c  mean N/T similarity 0< c <0.2
@@ -102,12 +102,10 @@ class Stimuli:
     #adjust distractor difficulty and draw search array 
     def search_array(self, trial, condition, ori=0,setSize=6):#trial contains [c, d1, ori, hard or easy(d1 or d2)]
         self.draw_fixation()
-        draw_objs = []
-        
+        draw_objs = [] 
         stimpos = list(itertools.product(np.linspace(-0.2*setSize/2,0.2*setSize/2,num=setSize),np.linspace(-0.2*setSize/2,0.2*setSize/2,num=setSize))) #set1
-        
 
-        stimori = np.random.choice([-10,10,-15,15,-20,20,-25,25,-30,30,-45,45])#randomly rotate the whole array
+        stimori = np.random.choice([-10,10,-15,15,-20,20,-25,25,-30,30,-35,35],2)#randomly rotate the whole array
         
         #map(lambda x:x*10,stimori)
     
@@ -132,9 +130,10 @@ class Stimuli:
                 draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type=trial['level'],ori=ori))
                 answer= 'no'
         
-        shuffle( draw_objs)
+        shuffle(draw_objs)
         [x.setPos(y) for x,y in zip(draw_objs,stimpos)]
-        [x.setOri(stimori)  for x in draw_objs if x.name=='target' or x.name=='d1']
+        [x.setOri(stimori[0])  for x in draw_objs if x.name=='target' or x.name=='d1']
+        [x.setOri(stimori[1])  for x in draw_objs if x.name=='d2_1' or x.name=='d2_2']
         
         d2 = [2*trial['c']-trial['d1'],trial['d1']-2*trial['c']]
         if trial['level'] =='d2_1':
@@ -144,7 +143,8 @@ class Stimuli:
         NN = visual.TextStim(self.win,p, color=(1.0,1.0,1.0),units='norm', height=0.05, pos=(0,-0.8))
         NN.draw()
         map(autoDraw_on, draw_objs)
-        self.probe_vs.draw()
+        if condition=='vs':
+            self.probe_vs.draw()
         start_time = self.win.flip()
         if condition=='memory':
             key, resp_time = self.get_input(max_wait=self.timing['search'],
@@ -153,8 +153,7 @@ class Stimuli:
                 pass
             else:
                 print('quiting experiment')
-                win.close()
-                core.quit() #change to close() for saving files
+                raise Exception('quiting')
             map(autoDraw_off, draw_objs)
             self.win.flip()
             #delay blank screen
@@ -164,9 +163,9 @@ class Stimuli:
                 pass
             else:
                 print('quiting experiment')
-                win.close()
-                core.quit() #change to close() for saving files
-            return target
+                raise Exception('quiting')
+                
+            return target, p
         if condition=='vs':
             key, resp_time = self.get_input(max_wait=self.timing['search'],
                                         keylist=self.recall_keymap.keys() + ['escape'])
@@ -176,13 +175,12 @@ class Stimuli:
                 return ('timeout', answer, resp_time-start_time)
             elif key == 'escape':
                 print('quiting experiment')
-                win.close()
-                core.quit() #change to close() for saving files
+                raise Exception('quiting')
             else:
-                return (self.vs_keymap[key], answer, resp_time-start_time)#return response, correct answer &RT
+                return (self.vs_keymap[key], answer, resp_time-start_time, p)#return response, correct answer &RT
             
         #draw the rotated target and ask for a binary response
-    def recall(self, target, orientation):
+    def recall(self, target, orientation, p):
         target_probe = copy(target)
         an = target_probe.ori
         self.set_ori(target_probe,orientation+an)
@@ -200,10 +198,9 @@ class Stimuli:
             return ('timeout', answer, resp_time-start_time)
         elif key == 'escape':
             print('quiting experiment')
-            win.close()
-            core.quit() #change to close() for saving files
+            raise Exception('quiting')
         else:
-            return (self.recall_keymap[key], answer, resp_time-start_time)#return response, correct answer &RT
+            return (self.recall_keymap[key], answer, resp_time-start_time, p)#return response, correct answer &RT
 
     def text_and_stim_keypress(self, text, stim=None,pos=(0,-0.8), max_wait=float('inf')):
         if stim is not None:
@@ -214,9 +211,9 @@ class Stimuli:
         display_text = visual.TextStim(self.win, text=text,
                                        font='Helvetica', alignHoriz='center',
                                        alignVert='center', units='norm',
-                                       pos=pos, height=0.1,
+                                       pos=pos, height=0.08,
                                        color=[255, 255, 255], colorSpace='rgb255',
-                                       wrapWidth=1)
+                                       wrapWidth=3)
         display_text.draw()
         self.win.flip()
         key = event.waitKeys(maxWait=max_wait)
@@ -231,9 +228,9 @@ class Stimuli:
         display_text = visual.TextStim(self.win, text=text,
                                        font='Helvetica', alignHoriz='center',
                                        alignVert='center', units='norm',
-                                       pos=(0,-0.8), height=0.1,
+                                       pos=(0,-0.8), height=0.08,
                                        color=[255, 255, 255], colorSpace='rgb255',
-                                       wrapWidth=1)
+                                       wrapWidth=3)
         display_text.draw()
         self.win.flip()
         key = event.waitKeys(maxWait=max_wait)
@@ -244,23 +241,11 @@ class Stimuli:
                 core.quit()
         self.win.flip()
 
-def get_settings():
-    data={}
-    data['expname']='Attention_WM'
-    data['expdate']=datetime.now().strftime('%Y%m%d_%H%M')
-    data['PID']=''
-    dlg=gui.DlgFromDict(data,title='Exp Info',fixed=['expname','expdate'],order=['expname','expdate','PID'])
-    if not dlg.OK:
-        core.quit()
-#    outName='P%s_%s.csv'%(data['participantid'],data['expdate'])
-#    outFile = open(outName, 'wb')
-#    outWr = csv.writer(outFile) # a .csv file with that name. Could be improved, but gives us some control
-#    outWr.writerow(['%s, %s, %s, %s, %s\n'%('condition', 'trial_no', 'target', 'response', 'Reaction time')]) # write out header
-#    return outFile
+
 
 def get_window():
-    return visual.Window([800,800],
-        winType='pyglet', monitor="testMonitor",fullscr=False, colorSpace='rgb',color=(0,0,0),units='norm')
+    return visual.Window([900,900],
+        winType='pyglet', monitor="testMonitor",fullscr=False, colorSpace='rgb',color=(-1,-1,-1),units='norm')
 
 def autoDraw_on(stim):
     stim.autoDraw = True
@@ -270,9 +255,8 @@ def autoDraw_off(stim):
     stim.autoDraw = False
     return stim
 
-def run_vs():
+def run_vs(win, fi=None,setSize=4):
 #    (expname, sid, numblocks, speed, mark_mode, input_mode) = get_settings()
-    win = get_window()
     win.flip()
     timing = {'fixation': 0.8,
               'search': float('inf'),
@@ -283,13 +267,14 @@ def run_vs():
     orientation = [5,10,15] #replaced by staircase in the future
     orientation2 = [x*-1 for x in orientation]
     orientation=orientation+ orientation2
-    constant = [0.1]
-    d1=[0.1,0.08,0.05]
-#    d2 = [2*c-d1,d1-2*c]
-#    NT = (d1['pos']+d2['pos'])/0.4+(d1['ori']+d2['ori'])/180 #normalized similarity?
-#    NN = [abs(d1-d2[0]), abs(d1-d2[1])] # N/N similarity
-#    print('mean N/T similarity: ',c)
 
+    #c [sqrt(0.005),0.2]; d1 [0.1,sqrt(4c**2-0.01)]
+    constant = list(np.arange(0.08,0.2,0.02))
+    d1=[]
+    for i in range(len(constant)):
+        a=list(np.arange(0.1,sqrt(4*constant[i]**2-0.01),0.02))
+        d1.append([x for x in a if x<0.2])
+    
     stim = Stimuli(win, timing, orientation)
 
     stim.text_and_stim_keypress('Welcome to the attention and working memory study',pos=(0,0.7),
@@ -306,7 +291,9 @@ def run_vs():
 #        random.shuffle(trial_types)
 #        trial_list = []
     # construct trials
-    trial_type = list(itertools.product(constant,d1,orientation))
+    trial_type=[]
+    for i in range(len(constant)):
+        trial_type =trial_type+ list(itertools.product([constant[i]],d1[i],orientation))
     trial_list=[]
     for i in range(len(trial_type)):
         trial = {}
@@ -323,40 +310,40 @@ def run_vs():
         trial['level'] = 'd2_1'
         trial_list.append(trial)
     shuffle(trial_list)
+    print (len(trial_list))
     # run trials
     for i, trial in enumerate(trial_list):
         try:
-            resp, answer, rt = stim.search_array(trial,condition='vs',setSize=4)
+            resp, answer, rt, NN = stim.search_array(trial,condition='vs',setSize=setSize)
             corr = (resp == answer)
             if not corr:
                 if resp == 'timeout':
-                    stim.text('Timeout')
+                    stim.text('Timeout',max_wait=0.6)
                 else:
-                    stim.text('Incorrect')
+                    stim.text('Incorrect',max_wait=0.6)
+                   # condition', 'answer', 'response', 'RT', 'N/T similarity','N/N similarity','orientation'
+            if fi is not None:
+                fi.writerow(['%s, %s, %s, %.3f, %.2f, %.2f, %d\n'%('vs', answer, resp, rt, trial['c'], NN, 0)])
             core.wait(timing['intertrial'])
-        except Exception:
-            traceback.print_exc()
-            win.close()
-            core.quit()
+        except Exception as err:
+            if err =='quiting':
+                raise Exception('quiting')
+            else:
+                traceback.print_exc()
+                raise Exception('quiting')
             
             
-        
-#        with open(expname + '_' + sid + '.json', 'a') as f:
-#            f.write(json.dumps(block))
-#            f.write('\n')
-        
     stim.text_and_stim_keypress('Congratulations! You have finished.',
                                         max_wait=2.0)
-    return win
 
 
-def run_memory():
+def run_memory(win,fi, setSize=3):
 #    (expname, sid, numblocks, speed, mark_mode, input_mode) = get_settings()
-    win = get_window()
+    
 
     win.flip()
     timing = {'fixation': 0.8,
-              'search': 6,
+              'search': 5,
               'blank': 2,
               'recall': 4 ,
               'intertrial': 1.0}
@@ -364,12 +351,11 @@ def run_memory():
     orientation = [5,10,15] #staircase
     orientation2 = [x*-1 for x in orientation]
     orientation=orientation+ orientation2
-    constant = [0.1]
-    d1=[0.1,0.08,0.05]
-#    d2 = [2*c-d1,d1-2*c]
-#    NT = (d1['pos']+d2['pos'])/0.4+(d1['ori']+d2['ori'])/180 #normalized similarity?
-#    NN = [abs(d1-d2[0]), abs(d1-d2[1])] # N/N similarity
-#    print('mean N/T similarity: ',c)
+    constant = list(np.arange(0.08,0.2,0.02))
+    d1=[]
+    for i in range(len(constant)):
+        a=list(np.arange(0.1,sqrt(4*constant[i]**2-0.01),0.02))
+        d1.append([x for x in a if x<0.2])
 
     stim = Stimuli(win, timing, orientation)
 
@@ -387,7 +373,9 @@ def run_memory():
 #        random.shuffle(trial_types)
 #        trial_list = []
     # construct trials
-    trial_type = list(itertools.product(constant,d1,orientation))
+    trial_type=[]
+    for i in range(len(constant)):
+        trial_type =trial_type+ list(itertools.product([constant[i]],d1[i],orientation))
     trial_list=[]
     for i in range(len(trial_type)):
         trial = {}
@@ -404,24 +392,27 @@ def run_memory():
         trial['level'] = 'd2_1'
         trial_list.append(trial)
     shuffle(trial_list)
+    print (len(trial_list))
     # run trials
     for i, trial in enumerate(trial_list):
         try:
-            target = stim.search_array(trial,condition='memory',setSize=3)
-            resp, answer, rt = stim.recall(target=target, orientation=trial['ori'])
+            target, p = stim.search_array(trial,condition='memory',setSize=setSize)
+            resp, answer, rt, NN = stim.recall(target=target, orientation=trial['ori'], p=p)
             corr = (resp == answer)
             if not corr:
                 if resp == 'timeout':
-                    stim.text('Timeout')
+                    stim.text('Timeout',max_wait=0.6)
                 else:
-                    stim.text('Incorrect')
-            core.wait(0.6)
-            win.flip()
+                    stim.text('Incorrect',max_wait=0.6)  
+            if fi is not None:
+                fi.writerow(['%s, %s, %s, %.3f, %.2f, %.2f, %d\n'%('memory', answer, resp, rt, trial['c'], NN, trial['ori'])])
             core.wait(timing['intertrial'])
-        except Exception:
-            traceback.print_exc()
-            win.close()
-            core.quit()
+        except Exception as err:
+            if err =='quiting':
+                raise Exception('quiting')
+            else:
+                traceback.print_exc()
+                raise Exception('quiting')
             
             
         
@@ -431,14 +422,31 @@ def run_memory():
         
     stim.text_and_stim_keypress('Congratulations! You have finished.',
                                         max_wait=2.0)
-    return win
 
-    '''cleanup/file closing/participant thank you messag'''
+
+def get_settings():
+    data={}
+    data['expname']='Attention_WM'
+    data['expdate']=datetime.now().strftime('%Y%m%d_%H%M')
+    data['PID']=''
+    data['condition']=['vs','memory']
+    dlg=gui.DlgFromDict(data,title='Exp Info',fixed=['expname','expdate'],order=['expname','expdate','PID','condition'])
+
+    if not dlg.OK:
+        core.quit()
+    outName='P%s_%s.csv'%(data['PID'],data['expdate'])
+    outFile = open(outName, 'wb')
+    outWr = csv.writer(outFile, delimiter=';',quotechar=' ', quoting=csv.QUOTE_MINIMAL) # a .csv file with that name. Could be improved, but gives us some control
+    outWr.writerow(['%s, %s, %s, %s, %s,%s, %s'%('condition', 'answer', 'response', 'RT', 'N/T similarity','N/N similarity','orientation')]) # write out header
+    return outWr, outFile, data['condition']
+
+
+    #cleanup/file closing/participant thank you messag
 def close(win, fname=None):
-
-    #fname.close() #close the output file
+    if fname is not None:
+        fname.close() #close the output file
     thanks = visual.TextStim(win,'thank you for your participation',font='Helvetica', alignHoriz='center',
-                          alignVert='center', units='norm', height=0.1,color=(1.0,1.0,1.0))    
+                          alignVert='center', units='norm', height=0.1,color=(1.0,1.0,1.0),wrapWidth=3)    
     thanks.draw()
     win.flip()
     event.waitKeys(keyList=['return'])    
@@ -449,6 +457,15 @@ def close(win, fname=None):
 
 
 if __name__ == '__main__':
-    #get_settings()
-    #win = run_memory()
-    win = run_vs()
+    filewriter, fname , condition = get_settings()
+    win = get_window()
+    if condition=='memory':
+        try:
+            run_memory(win,filewriter,setSize=4)
+        except Exception:        
+            close(win,fname=fname)
+    else:
+        try:
+            run_vs(win,filewriter)
+        except Exception:        
+            close(win,fname=fname)
