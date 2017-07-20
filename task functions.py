@@ -6,8 +6,7 @@ Created on Tue Jul  4 14:45:48 2017
 @author: mz
 
 to-do:
-    write to csv
-    quit function
+    
     staircase implementation
 """
 
@@ -220,8 +219,7 @@ class Stimuli:
         if key is not None:
             if key[0] == 'escape':
                 print('quiting experiment')
-                win.close()
-                core.quit() #change to close() for saving files
+                raise Exception('quiting')
         self.win.flip()
 
     def text(self,  text,max_wait=3.0):
@@ -237,8 +235,7 @@ class Stimuli:
         if key is not None:
             if key[0] == 'escape':
                 print('quiting experiment')
-                win.close()
-                core.quit()
+                raise Exception('quiting')
         self.win.flip()
 
 
@@ -412,11 +409,6 @@ def run_memory(win,fi, setSize=3):
                 traceback.print_exc()
                 raise Exception('quiting')
             
-            
-        
-#        with open(expname + '_' + sid + '.json', 'a') as f:
-#            f.write(json.dumps(block))
-#            f.write('\n')
         
     stim.text_and_stim_keypress('Congratulations! You have finished.',
                                         max_wait=2.0)
