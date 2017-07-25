@@ -35,7 +35,7 @@ class Stimuli:
                                         pos=(0, 0), height=0.1,
                                         color=[255, 255, 255], colorSpace='rgb255',
                                         wrapWidth=3)
-        self.probe = visual.TextStim(self.win,text='clockwise or anticlockwise?',
+        self.probe = visual.TextStim(self.win,text='anticlockwise or clockwise?',
                                      font='Helvetica', alignHoriz='center', alignVert='center',
                                      units='norm',pos=(0, 0.8), height=0.08,
                                      color=[255, 255, 255], colorSpace='rgb255',wrapWidth=3)
@@ -43,7 +43,7 @@ class Stimuli:
                                      font='Helvetica', alignHoriz='center', alignVert='center',
                                      units='norm',pos=(0, 0.8), height=0.08,
                                      color=[255, 255, 255], colorSpace='rgb255',wrapWidth=3)
-        self.recall_keymap = {'z': 'clockwise', 'm': 'anticlockwise'}
+        self.recall_keymap = {'z': 'anticlockwise', 'm': 'clockwise'}
         self.vs_keymap = {'z': 'yes', 'm': 'no'}
         
     def set_ori(self,obj, angle):
@@ -323,8 +323,8 @@ def run_vs(win, fi=None,setSize=4):
               'intertrial': 1.0}
 #
     orientation = [0]
-    constant = list(np.arange(0.08,0.25,0.02))
-    d1=[]
+    constant = list(np.arange(0.08,0.25,0.02)) #set N/T similarity
+    d1=[] #set D1/T similarity
     for i in range(len(constant)):
         a=list(np.arange(0.1,0.2,0.01))
         d1.append([x for x in a if x<0.2])
@@ -380,7 +380,7 @@ def run_vs(win, fi=None,setSize=4):
                    # condition', 'answer', 'response', 'RT', 'N/T similarity','N/N similarity','orientation'
             
             if fi is not None:
-                fi.writerow(['%s, %s, %s, %.3f, %.2f, %.2f, %d\n'%('vs', answer, resp, rt*1000, trial['c'], NN, 0)])
+                fi.writerow(['%s, %s, %s, %.3f, %.2f, %.2f, %d'%('vs', answer, resp, rt*1000, trial['c'], NN, 0)])
             if i!=0 and i%(int(len(trial_list)/4))==0:
                 blockbreak(win, i/int((len(trial_list)/4)))
             core.wait(timing['intertrial'])
@@ -456,7 +456,7 @@ def run_memory(win,fi, setSize=3):
                 else:
                     stim.text('Incorrect',max_wait=0.6)  
             if fi is not None:
-                fi.writerow(['%s, %s, %s, %.3f, %.2f, %.2f, %d\n'%('memory', answer, resp, rt*1000, trial['c'], NN, trial['ori'])])
+                fi.writerow(['%s, %s, %s, %.3f, %.2f, %.2f, %d'%('memory', answer, resp, rt*1000, trial['c'], NN, trial['ori'])])
             if i!=0 and i%(int(len(trial_list)/4))==0:
                 blockbreak(win, i/int((len(trial_list)/4)))
             core.wait(timing['intertrial'])
@@ -478,22 +478,25 @@ def get_settings():
     data['expdate']=datetime.now().strftime('%Y%m%d_%H%M')
     data['PID']=''
     data['condition']=['vs','memory']
-    dlg=gui.DlgFromDict(data,title='Exp Info',fixed=['expname','expdate'],order=['expname','expdate','PID','condition'])
+    data['create file'] = False
+    dlg=gui.DlgFromDict(data,title='Exp Info',fixed=['expname','expdate'],order=['expname','expdate','PID','condition','create file'])
 
     if not dlg.OK:
         core.quit()
-    outName='P%s_%s.csv'%(data['PID'],data['expdate'])
-    outFile = open(outName, 'wb')
-    outWr = csv.writer(outFile, delimiter=';',quotechar=' ', quoting=csv.QUOTE_MINIMAL) # a .csv file with that name. Could be improved, but gives us some control
-    outWr.writerow(['%s, %s, %s, %s, %s,%s, %s'%('condition', 'answer', 'response', 'RT', 'N/T similarity','N/N similarity','orientation')]) # write out header
-    return outWr, outFile, data['condition']
-
+    if data['create file']==True:
+        outName='P%s_%s.csv'%(data['PID'],data['expdate'])
+        outFile = open(outName, 'wb')
+        outWr = csv.writer(outFile, delimiter=';', lineterminator='\n', quotechar=' ', quoting=csv.QUOTE_MINIMAL) # a .csv file with that name. Could be improved, but gives us some control
+        outWr.writerow(['%s, %s, %s, %s, %s,%s, %s'%('condition', 'answer', 'response', 'RT', 'N/T similarity','N/N similarity','orientation')]) # write out header
+        return outWr, outFile, data['condition']
+    else: 
+        return None,None,data['condition']
 
     #cleanup/file closing/participant thank you messag
 def close(win, fname=None):
     if fname is not None:
         fname.close() #close the output file
-    thanks = visual.TextStim(win,'thank you for your participation',font='Helvetica', alignHoriz='center',
+    thanks = visual.TextStim(win,'Thank you for your participation',font='Helvetica', alignHoriz='center',
                           alignVert='center', units='norm', height=0.1,color=(1.0,1.0,1.0),wrapWidth=3)    
     thanks.draw()
     win.flip()
