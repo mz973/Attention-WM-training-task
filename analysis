@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jul 27 12:45:56 2017
+
+@author: mz
+
+Analyzing data from Attention-WM paradigm
+"""
+import glob, os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+
+#import data
+path ='/Users/mz/Documents/GitHub/Attention-WM-training-task'
+filenames_memory = glob.glob(os.path.join(path ,"pilot*_memory*.csv"))
+filenames_vs = glob.glob(os.path.join(path ,"pilot*_vs*.csv"))
+df_memory = pd.concat((pd.read_csv(f,header=0) for f in filenames_memory))
+df_vs = pd.concat((pd.read_csv(f,header=0) for f in filenames_vs))
+names = list(df_memory.columns)#'condition', 'answer', 'response', 'RT', 'N/T similarity','N/N similarity','orientation'
+df_memory['correct'] = np.where(df_memory['  answer']==df_memory[ '  response'], 1, 0) #add a column where correct response is coded 1, incorrect as 0
+df_memory['answer'] = np.where(df_memory['  answer']=='  clockwise', 1, 0)#code trial type clockwise=1
+data_memory = np.array(df_memory.values[:,3:],dtype='float') #get column 3-end
+df_vs['correct'] = np.where(df_vs['  answer']==df_vs[ '  response'], 1, 0)#for weird reason there're whitespace before column names
+df_vs['answer'] = np.where(df_vs['  answer']=='  yes', 1, 0)#code trial type target present=1
+data_vs = np.array(df_vs.values[:,3:],dtype='float')
+data_vs[0:432,0]=data_vs[0:432,0]*1000 #first file RT is in second, need to transform into ms
+
+#column: RT, NT, NN, orientation, correct, trial type
+#accuracy
+print('visual search accuracy: ', np.count_nonzero(data_vs[:,4]==1)/data_vs.shape[0])
+print('memory accuracy: ',np.count_nonzero(data_memory[:,4]==1)/data_memory.shape[0])
+
+np.mean(data_vs[np.logical_and(df_vs['  answer']=='  yes',df_vs['correct']==0)][:,0]) #calculate mean RT, select trial type + correct/incorrect response
+np.mean(data_vs[np.logical_and(df_vs['  answer']=='  no',df_vs['correct']==0)][:,0]) 
+np.mean(data_vs[np.where(df_vs['  answer']=='  no', True, False)][:,0])
+meanRT = [] #calculate RT for each unique NT, NN similarity and trial type 
+for i, similarity in enumerate(np.unique(data_vs[:,[1,2,5]],axis=0)):
+    meanRT.append(np.mean(data_vs[np.where((data_vs[:,[1,2,5]]==similarity).all(axis=1))[0]][:,0]))
+    print(similarity,np.mean(data_vs[np.where((data_vs[:,[1,2,5]]==similarity).all(axis=1))[0]][:,0]))
+
+#plot RT as function of NT and NN similarity, separated by trial type
+X = np.unique(data_vs[:,[1,2]],axis=0)[:,0]; X.shape+=(1,) #N/T dissimilarity
+Y= np.unique(data_vs[:,[1,2]],axis=0)[:,1]; Y.shape+=(1,) #N/N dissimilarity
+Z= np.array(meanRT[1::2]);Z.shape+=(1,) #RT 1::2 is target present
+fig = plt.figure()
+ax = Axes3D(fig) 
+ax.scatter(X,Y,Z)
+ax.set_zticks(np.arange(2000, 3500, 500))
+ax.set_yticks(np.arange(min(Y), max(Y)+0.2, 0.1))
+ax.set_xlabel('N/T dissimilarity'); ax.set_ylabel('N/N dissimilarity');ax.set_zlabel('RT')
+plt.show()
+
+#memory precision as function of degree of orientation 
+meanAcc = [] # 
+for i, similarity in enumerate(np.unique(data_memory[:,[3,5]],axis=0)):
+    a = data_memory[np.where((data_memory[:,[3,5]]==similarity).all(axis=1))[0]][:,4]
+    acc = np.sum(a)/len(a)
+    meanAcc.append(acc)
+    print(similarity[0],acc)
+
+fig = plt.figure()
+plt.scatter(np.unique(data_memory[:,3],axis=0), meanAcc,marker='.',color='blue')
+plt.axhline(y=0.5, xmin=0, xmax=1, hold=None,color='red')
+plt.xticks(np.arange(-55, 55, 10))
+plt.xlabel('orientation'); plt.ylabel('accuracy')
+plt.show()
