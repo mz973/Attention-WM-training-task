@@ -73,10 +73,13 @@ class Stimuli:
 
 #        c  mean N/T similarity 0< c <0.2
 #        d1# D1/T similarity 0< d1 <c
-    def make_stim (self, c, d1, Type,size=0.2, lw=1.5, ori=0, sign=1):  
+    def make_stim (self, c, d1, Type,size=0.2, lw=1.5, ori=0, sign=None ):  
         D2 = [2*c-d1,d1-2*c] #calculate d2/T similarity based on c and d1; 
         d2 = [x*0.8 for x in D2] #d2 is composed by 20% orientation and 80% position difference
-        d2_ori = sign *abs(D2[0])*0.2/0.2*180  #normalized difference to converge orientation and position
+        if sign is not None:
+            d2_ori = sign *abs(D2[0])*0.2/0.2*180  #normalized difference to converge orientation and position
+        else:
+            d2_ori = ori
         vertice = []
         vertice.append([(0, 0), (.2, 0), (.2, .4),(.2, 0),(.4,0)]) #bar length is 0.4
         vertice.append([(0, 0), (.2-d1, 0), (.2-d1, .4),(.2-d1, 0),(.4,0)])
@@ -107,7 +110,7 @@ class Stimuli:
         self.draw_fixation()
         draw_objs = [] 
         stimpos = list(itertools.product(np.linspace(-0.2*setSize/2,0.2*setSize/2,num=setSize),np.linspace(-0.2*setSize/2,0.2*setSize/2,num=setSize))) #set1
-        orilist = np.linspace(-45,45,num=19)#5 degree step
+        orilist = np.linspace(-45,45,num=7)#10 degree step
         stimori = np.random.choice(orilist)#randomly rotate the whole array
         
         #map(lambda x:x*10,stimori)
@@ -401,16 +404,15 @@ def run_vs(win, fi=None,setSize=4):
 def run_memory(win,fi, setSize=3):
 #    (expname, sid, numblocks, speed, mark_mode, input_mode) = get_settings()
     
-
     win.flip()
     timing = {'fixation': 0.8,
-              'search': 6,
+              'search': 6, #float('inf'),
               'blank': 2,
-              'recall': 5 ,
+              'recall': 6 ,
               'intertrial': 1.0}
 #
     orientation = np.linspace(-45,45,num=19)#5 degree #staircase
-    constant = [0.16] #Aaverage of vs condition
+    constant = [0.15] #Aaverage of vs condition
     d1=[0.15]
 
     stim = Stimuli(win, timing, orientation)
@@ -484,7 +486,7 @@ def get_settings():
     if not dlg.OK:
         core.quit()
     if data['create file']==True:
-        outName='P%s_%s.csv'%(data['PID'],data['expdate'])
+        outName='P%s_%s_%s.csv'%(data['PID'],data['condition'],data['expdate'])
         outFile = open(outName, 'wb')
         outWr = csv.writer(outFile, delimiter=';', lineterminator='\n', quotechar=' ', quoting=csv.QUOTE_MINIMAL) # a .csv file with that name. Could be improved, but gives us some control
         outWr.writerow(['%s, %s, %s, %s, %s,%s, %s'%('condition', 'answer', 'response', 'RT', 'N/T similarity','N/N similarity','orientation')]) # write out header
