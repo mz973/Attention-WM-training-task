@@ -3,7 +3,6 @@
 """
 Created on Tue Jul  4 14:45:48 2017
 @author: mz
-
 to-do:
     
     staircase implementation
@@ -109,8 +108,8 @@ class Stimuli:
     def search_array(self, trial, condition, target=None, ori=0,setSize=6):#trial contains [c, d1, ori, hard or easy(d1 or d2)]
         self.draw_fixation()
         draw_objs = [] 
-        stimpos = list(itertools.product(np.linspace(-0.2*setSize/2,0.2*setSize/2,num=setSize),np.linspace(-0.2*setSize/2,0.2*setSize/2,num=setSize))) #set1
-        orilist = np.linspace(-45,45,num=7)#10 degree step
+        stimpos = list(itertools.product(np.linspace(-0.25*setSize/2,0.25*setSize/2,num=setSize),np.linspace(-0.25*setSize/2,0.25*setSize/2,num=setSize))) #set1
+        orilist = [-50,-25,0,25,50]#25 degree step, ramdomize memory array orientations
         stimori = np.random.choice(orilist)#randomly rotate the whole array
         
         #map(lambda x:x*10,stimori)
@@ -293,7 +292,7 @@ def stimulirule(triallist):#get rid of trial types (d1,d2,c) that do not conform
             trial_list.append(trial)
     return trial_list
 
-def blockbreak(win, num):
+def blockbreak(win, num):#create a break in between trials and present progress message
     msg1 = visual.TextStim(win,'Well done!',color=(1.0,1.0,1.0),units='norm', height=0.07, pos=(0,0.1),wrapWidth=1)
     msg2 = visual.TextStim(win,str(num)+'/4 block completed',color=(1.0,1.0,1.0),units='norm', height=0.07, pos=(0,0),wrapWidth=2)
     msg3 = visual.TextStim(win,'Press Enter to continue',color=(1.0,1.0,1.0),units='norm', height=0.07, pos=(0,-0.1),wrapWidth=2)
@@ -411,7 +410,7 @@ def run_memory(win,fi, setSize=3):
               'recall': 6 ,
               'intertrial': 1.0}
 #
-    orientation = np.linspace(-45,45,num=19)#5 degree #staircase
+    orientation = [-50,-25,25,50] #staircase
     constant = [0.15] #Aaverage of vs condition
     d1=[0.15]
 
