@@ -315,6 +315,24 @@ def autoDraw_off(stim):
     stim.autoDraw = False
     return stim
 
+def trialGen(c,p):
+    import warnings, random
+    #0<c<2, 
+    d1= (c-p)/2; d2 = (c+p)/2
+    if d1<0 or d1>2 or d2<0 or d2>2:
+        warnings.warn('d1 or d2 is not in acceptable range')
+    else:
+        if d1<=1: x1=random.uniform(0.5,d1)
+        else: x1=random.uniform(0.5,1); 
+        if d2<=1: x2=random.uniform(0.5,d2)
+        else: x2=random.uniform(0.5,1)
+        y1=d1-x1; y2= d2-x2
+        pos1 = x1*0.2; po2 = x2* 0.2
+        ori1 = y1*180; ori2 = y2*180
+        
+        #need some kind of screening rule and a while loop
+        
+
 def run_vs(win, fi=None,setSize=4):
 #    (expname, sid, numblocks, speed, mark_mode, input_mode) = get_settings()
     win.flip()
@@ -325,10 +343,10 @@ def run_vs(win, fi=None,setSize=4):
               'intertrial': 1.0}
 #
     orientation = [0]
-    constant = list(np.arange(0.08,0.25,0.02)) #set N/T similarity
+    constant = list(np.arange(0.08,0.25,0.02)) #set N/T similarity, step is .02
     d1=[] #set D1/T similarity
     for i in range(len(constant)):
-        a=list(np.arange(0.1,0.2,0.01))
+        a=list(np.arange(0.1,0.2,0.01)) #step is .01
         d1.append([x for x in a if x<0.2])
     
     stim = Stimuli(win, timing, orientation)
@@ -410,7 +428,7 @@ def run_memory(win,fi, setSize=3):
               'recall': 6 ,
               'intertrial': 1.0}
 #
-    orientation = [-50,-25,25,50] #staircase
+    orientation = [-50,-25,25,50] #staircase #as used in Bayes(2008)
     constant = [0.15] #Aaverage of vs condition
     d1=[0.15]
 
@@ -441,7 +459,7 @@ def run_memory(win,fi, setSize=3):
         trial['level'] = 'd2_2'
         trial_list.append(trial)
 
-    trial_list=trial_list*4 #inclement trial numbers
+    trial_list=trial_list*8 #inclement trial numbers
 
     shuffle(trial_list)
     print (len(trial_list))
