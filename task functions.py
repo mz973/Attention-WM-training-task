@@ -315,20 +315,40 @@ def autoDraw_off(stim):
     stim.autoDraw = False
     return stim
 
-def trialGen(c,p):
+#ideally this function takes 2 similarity index directly 
+#and generate eligible trials.
+def trialGen(c,p): #c is NT similarity, p is NN similarity
     import warnings, random
-    #0<c<2, 
-    d1= (c-p)/2; d2 = (c+p)/2
-    if d1<0 or d1>2 or d2<0 or d2>2:
-        warnings.warn('d1 or d2 is not in acceptable range')
+    #0<c<2; d1,d2<2 
+    P=[]
+    if p>2*c or p>(4-2*c) or p>2*c-1 or c>2:
+        warnings.warn('c or p is not in acceptable range')
+        return [0]
     else:
-        if d1<=1: x1=random.uniform(0.5,d1)
-        else: x1=random.uniform(0.5,1); 
-        if d2<=1: x2=random.uniform(0.5,d2)
-        else: x2=random.uniform(0.5,1)
-        y1=d1-x1; y2= d2-x2
-        pos1 = x1*0.2; po2 = x2* 0.2
-        ori1 = y1*180; ori2 = y2*180
+        d1= c-p/2; d2 = c+p/2
+        #d1= c+p/2; d2 = c-p/2
+        if d1<=1: 
+            x1 = round(random.uniform(0.5,d1),2) #make sure x1(bar position) is far enough from target
+        else:  
+            x1 = round(random.uniform(0.5,1),2) 
+        y1 = d1-x1
+        if d2<=1: 
+            x2_1 = np.linspace(0.5,d2,11)
+            x2_2 = -1 * x2_1
+        else:  
+            x2_1 = np.linspace(0.5,1,11) #round(random.uniform(0.5,1),2) * 1
+            x2_2 = -1 * x2_1
+        y2_1 = d2 - (x2_1)
+        y2_2 = -1 * y2_1
+        for i in range(len(x2_1)):
+            temp = [abs(x1-x2_1[i])+abs(y1-y2_1[i]),abs(x1-x2_1[i])+abs(y1-y2_2[i]),abs(x1-x2_2[i])+abs(y1-y2_1[i]),abs(x1-x2_2[i])+abs(y1-y2_2[i])]
+            P.extend(temp)
+        P = [round(x,2) for x in P]
+        P = np.unique(P)
+        P.sort()
+        return P
+        print (P,'\n',(d1+d2)/2)
+
         
         #need some kind of screening rule and a while loop
         
