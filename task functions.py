@@ -20,10 +20,10 @@ from math import sqrt
 
 class Stimuli:
 
-    def __init__(self, win, timing, orientation):
+    def __init__(self, win, timing):
         self.win = win
         self.timing = timing
-        self.orientation=orientation
+
         self.ready = visual.TextStim(win,'ready?', color=(1.0,1.0,1.0),units='norm', height=0.08, pos=(0,0),wrapWidth=1)
         self.sure = visual.TextStim(win,'Are you sure? Press Escape to exit, press Enter to resume experiment.',
                                         color=(1.0,1.0,1.0),units='norm', height=0.07, pos=(0,0),wrapWidth=2)
@@ -72,36 +72,13 @@ class Stimuli:
 
 #        c  mean N/T similarity 0< c <0.2
 #        d1# D1/T similarity 0< d1 <c
-    def make_stim (self, c, d1, Type,size=0.2, lw=1.5, ori=0, sign=None ):  
-        D2 = [2*c-d1,d1-2*c] #calculate d2/T similarity based on c and d1; 
-        d2 = [x*0.8 for x in D2] #d2 is composed by 20% orientation and 80% position difference
-        if sign is not None:
-            d2_ori = sign *abs(D2[0])*0.2/0.2*180  #normalized difference to converge orientation and position
-        else:
-            d2_ori = ori
-        vertice = []
-        vertice.append([(0, 0), (.2, 0), (.2, .4),(.2, 0),(.4,0)]) #bar length is 0.4
-        vertice.append([(0, 0), (.2-d1, 0), (.2-d1, .4),(.2-d1, 0),(.4,0)])
-        vertice.append([(0, 0), (.2-d2[0], 0), (.2-d2[0], .4),(.2-d2[0], 0),(.4,0)]) 
-        vertice.append([(0, 0), (.2-d2[1], 0), (.2-d2[1], .4),(.2-d2[1], 0),(.4,0)])
-        if Type=='t':#target stimuli
-            self.target = visual.ShapeStim(self.win, vertices=vertice[0],
-                                 closeShape=False, lineWidth=lw, 
-                                 ori=ori,size=size,pos=(0,0),name='target',autoDraw=False)
-            return self.target
-        if Type=='d1':#distractor 1
-            return visual.ShapeStim(self.win, vertices=vertice[1],
-                                 closeShape=False, lineWidth=lw, 
-                                 ori=ori,size=size,pos=(0,0),name='d1',autoDraw=False)
-            
-        if Type=='d2_1': #distracor 2-1
-            return visual.ShapeStim(self.win, vertices=vertice[2],
-                                 closeShape=False, lineWidth=lw, 
-                                 ori=d2_ori,size=size,pos=(0,0),name='d2_1',autoDraw=False)
-        if Type=='d2_2': #distractor 2-2
-            return visual.ShapeStim(self.win, vertices=vertice[3],
-                                 closeShape=False, lineWidth=lw, 
-                                 ori=d2_ori,size=size,pos=(0,0),name='d2_2',autoDraw=False)
+    def make_stim (self, x, y, target=0,size=0.2, lw=1.5 ):  
+        d1 = x*0.2
+        vertice = [(0, 0), (.2-d1, 0), (.2-d1, .4),(.2-d1, 0),(.4,0)] #bar length is 0.4
+        
+        return visual.ShapeStim(self.win, vertices=vertice,
+                                closeShape=False, lineWidth=lw, 
+                                ori=y*180,size=size,pos=(0,0),name='stimuli',autoDraw=False)
  
 
     #adjust distractor difficulty and draw search array 
@@ -109,32 +86,34 @@ class Stimuli:
         self.draw_fixation()
         draw_objs = [] 
         stimpos = list(itertools.product(np.linspace(-0.25*setSize/2,0.25*setSize/2,num=setSize),np.linspace(-0.25*setSize/2,0.25*setSize/2,num=setSize))) #set1
-        orilist = [-50,-25,0,25,50]#25 degree step, ramdomize memory array orientations
+        orilist = [-50,-25,-5,5,25,50]#25 degree step, ramdomize memory array orientations
         stimori = np.random.choice(orilist)#randomly rotate the whole array
         
         #map(lambda x:x*10,stimori)
     
         if condition=='memory':#any stimulus could be probed in recall
             while len(draw_objs)<int(len(stimpos)/2)*2:
-                draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type='d1',ori=np.random.choice(orilist)))
-                draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type=trial['level'],ori=np.random.choice(orilist)))
+                draw_objs.append(self.make_stim(x=trial['x1'],y=np.random.choice(orilist)/180.0))#distractor1
+                draw_objs.append(self.make_stim(x=trial['x2'],y=np.random.choice(orilist)/180.0))#distractor2
             if len(draw_objs)<len(stimpos):
-                draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type='d1',ori=np.random.choice(orilist)))
+                draw_objs.append(self.make_stim(x=trial['x2'],y=np.random.choice(orilist)/180.0))
             targetobj = draw_objs[np.random.choice(range(len(stimpos)))]
             
+            
+            
         if condition=='vs': #half of trials have no target
-            sign=np.random.choice([-1,1])
-            for n in range((len(stimpos)-1)/2):    
-                draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type='d1',ori=ori))
-                draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type=trial['level'],ori=ori,sign=sign ))
+            
+            for n in range((setSize**2-1)/2):    
+                draw_objs.append(self.make_stim(x=trial['x1'],y=trial['y1']))#distractor1
+                draw_objs.append(self.make_stim(x=trial['x2'],y=trial['y2']))#distractor2
             if target==1:
-                draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type='t',ori=ori))
-                draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type='d1',ori=ori))
+                draw_objs.append(self.make_stim(x=0,y=0))#target
                 answer='yes'
-            if target==0:
-                draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type='d1',ori=ori))
-                draw_objs.append(self.make_stim(c=trial['c'], d1=trial['d1'], Type=trial['level'],ori=ori,sign=sign))
-                answer= 'no'
+            else: answer= 'no'
+            while len(draw_objs)<setSize**2:
+                draw_objs.append(self.make_stim(x=trial['x2'],y=trial['y2']))
+
+                
                 
             [x.setOri(stimori+x.ori)  for x in draw_objs ]
         
@@ -142,14 +121,6 @@ class Stimuli:
         [x.setPos(y) for x,y in zip(draw_objs,stimpos)]
         
         
-        
-        D2 = [2*trial['c']-trial['d1'],trial['d1']-2*trial['c']]#calculate NN similarity
-        d2 = [x*0.8 for x in D2]  #d2 is composed by 20% orientation and 80% position difference
-        
-        if trial['level'] =='d2_1':
-            p = abs(trial['d1']-d2[0])+0.2*abs(D2[0]) #NN similarity includes orientation and position difference
-        else:
-            p= abs(trial['d1']-d2[1])+0.2*abs(D2[0])
         #NN = visual.TextStim(self.win,p, color=(1.0,1.0,1.0),units='norm', height=0.05, pos=(0,-0.8))
         #NN.draw()
         
@@ -188,9 +159,9 @@ class Stimuli:
                     print('quiting experiment')
                     raise Exception('quiting')
                 else:
-                    return targetobj,p
+                    return targetobj
 
-            return targetobj, p
+            return targetobj
         if condition=='vs':
             key, resp_time = self.get_input(max_wait=self.timing['search'],
                                         keylist=self.recall_keymap.keys() + ['escape'])
@@ -206,14 +177,15 @@ class Stimuli:
                     print('quiting experiment')
                     raise Exception('quiting')
                 else:
-                    return ('NA', answer, resp_time-start_time, p)
+                    return ('NA', answer, resp_time-start_time)
             else:
-                return (self.vs_keymap[key], answer, resp_time-start_time, p)#return response, correct answer &RT
+                return (self.vs_keymap[key], answer, resp_time-start_time)#return response, correct answer &RT
             
         #draw the rotated target and ask for a binary response
-    def recall(self, target, orientation, p):
+    def recall(self, target, orientation):
         target_probe = copy(target)
         an = target_probe.ori
+        print(an)
         self.set_ori(target_probe,orientation+an)
         if orientation >=0:
             answer = 'clockwise'
@@ -226,7 +198,7 @@ class Stimuli:
                                         keylist=self.recall_keymap.keys() + ['escape'])
         self.win.flip()
         if key is None:
-            return ('timeout', answer, resp_time-start_time,p)
+            return ('timeout', answer, resp_time-start_time)
         elif key == 'escape':
                 self.sure.draw()
                 self.win.flip()
@@ -237,7 +209,7 @@ class Stimuli:
                 else:
                     pass
         else:
-            return (self.recall_keymap[key], answer, resp_time-start_time, p)#return response, correct answer &RT
+            return (self.recall_keymap[key], answer, resp_time-start_time)#return response, correct answer &RT
 
     def text_and_stim_keypress(self, text, stim=None,pos=(0,-0.8), max_wait=float('inf')):
         if stim is not None:
@@ -280,15 +252,10 @@ class Stimuli:
                 raise Exception('quiting')
         self.win.flip()
 
-def stimulirule(triallist):#get rid of trial types (d1,d2,c) that do not conform to set rules
+def stimulirule(parameter, yrule):#get rid of trial types (d1,d2,c) that do not conform to set rules
     trial_list=[]
-    for i, trial in enumerate(triallist):
-        if trial['level'] =='d2_1':
-            d2 = (2*trial['c']-trial['d1'])*0.8
-        else:
-            d2= (trial['d1']-2*trial['c'])*0.8
-        if trial['d1']<0.2 and trial['d1']>0.1 and abs(d2)<0.2 and abs(d2)>0.1 and trial['d1']!=d2:
-            
+    for i in (parameter.shape[0]):
+        if abs(parameter[i][1]) <= yrule and abs(parameter[i][3])<=yrule and parameter[i][0]!=parameter[i][2]:
             trial_list.append(trial)
     return trial_list
 
@@ -317,10 +284,12 @@ def autoDraw_off(stim):
 
 #ideally this function takes 2 similarity index directly 
 #and generate eligible trials.
-def trialGen(c,p): #c is NT similarity, p is NN similarity
-    import warnings, random
-    #0<c<2; d1,d2<2 
-    P=[]
+# add rules:
+    #x1 x2 should not be same
+    #y1 y2 in range (0, 0.5)
+def trialGen(c,p): #c is NT similarity, p is NN similarity    #0<c<2; 0<p<4, d1,d2<2 
+    import warnings
+    P=[]; triallist=[] #triallist: x1, y1,x2,y2
     if p>2*c or p>(4-2*c) or p>2*c-1 or c>2:
         warnings.warn('c or p is not in acceptable range')
         return [0]
@@ -328,32 +297,39 @@ def trialGen(c,p): #c is NT similarity, p is NN similarity
         d1= c-p/2; d2 = c+p/2
         #d1= c+p/2; d2 = c-p/2
         if d1<=1: 
-            x1 = round(random.uniform(0.5,d1),2) #make sure x1(bar position) is far enough from target
+            x1 = np.arange(0.5,d1,0.05)#make sure x1(bar position) is far enough from target
+             
         else:  
-            x1 = round(random.uniform(0.5,1),2) 
+            x1 = np.arange(0.5,1,0.05)
         y1 = d1-x1
+        
         if d2<=1: 
-            x2_1 = np.linspace(0.5,d2,11)
+            x2_1 = np.arange(0.5,d2,0.05)
             x2_2 = -1 * x2_1
         else:  
-            x2_1 = np.linspace(0.5,1,11) #round(random.uniform(0.5,1),2) * 1
+            x2_1 = np.arange(0.5,1,0.05) #round(random.uniform(0.5,1),2) * 1
             x2_2 = -1 * x2_1
         y2_1 = d2 - (x2_1)
         y2_2 = -1 * y2_1
-        for i in range(len(x2_1)):
-            temp = [abs(x1-x2_1[i])+abs(y1-y2_1[i]),abs(x1-x2_1[i])+abs(y1-y2_2[i]),abs(x1-x2_2[i])+abs(y1-y2_1[i]),abs(x1-x2_2[i])+abs(y1-y2_2[i])]
-            P.extend(temp)
+        for x,y in zip(x1,y1):
+            for i in range(len(x2_1)):
+                temp = [abs(x-x2_1[i])+abs(y-y2_1[i]),abs(x-x2_1[i])+abs(y-y2_2[i]),abs(x-x2_2[i])+abs(y-y2_1[i]),abs(x-x2_2[i])+abs(y-y2_2[i])]
+                P.extend(temp)
+                triallist.append([x,y,x2_1[i],y2_1[i]])
+                triallist.append([x,y,x2_1[i],y2_2[i]])
+                triallist.append([x,y,x2_1[i],y2_1[i]])
+                triallist.append([x,y,x2_2[i],y2_2[i]])
         P = [round(x,2) for x in P]
-        P = np.unique(P)
-        P.sort()
-        return P
-        print (P,'\n',(d1+d2)/2)
-
+        P,indice = np.unique(P,return_index=True)
+        #P.sort()
+        triallist = np.array(triallist)
+   #     triallist = triallist[indice]
+        return P, indice, triallist
         
         #need some kind of screening rule and a while loop
         
 
-def run_vs(win, fi=None,setSize=4):
+def run_vs(win, fi=None,setSize=3):
 #    (expname, sid, numblocks, speed, mark_mode, input_mode) = get_settings()
     win.flip()
     timing = {'fixation': 0.8, #set timing
@@ -362,41 +338,45 @@ def run_vs(win, fi=None,setSize=4):
               'recall': 4 ,
               'intertrial': 1.0}
 #
-    orientation = [0]
-    constant = list(np.arange(0.08,0.25,0.02)) #set N/T similarity, step is .02
-    d1=[] #set D1/T similarity
-    for i in range(len(constant)):
-        a=list(np.arange(0.1,0.2,0.01)) #step is .01
-        d1.append([x for x in a if x<0.2])
-    
-    stim = Stimuli(win, timing, orientation)
+#    orientation = [0]
+#    constant = list(np.arange(0.08,0.25,0.02)) #set N/T similarity, step is .02
+#    d1=[] #set D1/T similarity
+#    for i in range(len(constant)):
+#        a=list(np.arange(0.1,0.2,0.01)) #step is .01
+#        d1.append([x for x in a if x<0.2])
+#    
+    stim = Stimuli(win, timing)
 
     stim.text_and_stim_keypress('Welcome to the attention and working memory study',pos=(0,0.7),
                                 stim=stim.ready)
     stim.text_and_stim_keypress('This is a visual search task',pos=(0,0.7),
                                 stim=stim.fixation)
-
-    trial_type=[]
-    for i in range(len(constant)):
-        trial_type =trial_type+ list(itertools.product([constant[i]],d1[i],orientation))
-    trial_list=[]
-    for i in range(len(trial_type)):
-        trial = {}
-        trial['c'] = trial_type[i][0]
-        trial['d1'] = trial_type[i][1]
-        trial['ori'] = trial_type[i][2]
-        trial['level'] = 'd2_2'
-        trial_list.append(trial)
-    for i in range(len(trial_type)):
-        trial = {}
-        trial['c'] = trial_type[i][0]
-        trial['d1'] = trial_type[i][1]
-        trial['ori'] = trial_type[i][2]
-        trial['level'] = 'd2_1'
-        trial_list.append(trial)
+#
+#    trial_type=[]
+#    for i in range(len(constant)):
+#        trial_type =trial_type+ list(itertools.product([constant[i]],d1[i],orientation))
+#
+#    for i in range(len(trial_type)):
+#        trial = {}
+#        trial['c'] = trial_type[i][0]
+#        trial['d1'] = trial_type[i][1]
+#        trial['ori'] = trial_type[i][2]
+#        trial['level'] = 'd2_1'
+#        trial_list.append(trial)
         
-    triallist = stimulirule(trial_list) #get rid of trials that do not conform to selection rules
-    trial_list=[]
+#    triallist = stimulirule(trial_list) #get rid of trials that do not conform to selection rules
+    p, parameters = trialGen(1.2,0.2)
+    triallist=[]
+    for i in range(len(parameters)):
+        trial = {}
+        trial['x1'] =parameters[i][0]
+        trial['y1'] = parameters[i][1]
+        trial['x2'] = parameters[i][2]
+        trial['y2'] = parameters[i][3]
+        trial['p'] = p[i]
+        trial['c'] = 1.2
+        triallist.append(trial)
+    trial_list = []
     for i,trial in enumerate(triallist): #half trials have target, half do not
         trial['target']=1
         trial_list.append(copy(trial))
@@ -410,7 +390,7 @@ def run_vs(win, fi=None,setSize=4):
     # run trials
     for i, trial in enumerate(trial_list):
         try:
-            resp, answer, rt, NN = stim.search_array(trial,condition='vs',target= trial['target'],setSize=setSize)
+            resp, answer, rt = stim.search_array(trial,condition='vs',target= trial['target'],setSize=setSize)
             corr = (resp == answer)
             if not corr:
                 if resp == 'timeout':
@@ -420,7 +400,8 @@ def run_vs(win, fi=None,setSize=4):
                    # condition', 'answer', 'response', 'RT', 'N/T similarity','N/N similarity','orientation'
             
             if fi is not None:
-                fi.writerow(['%s, %s, %s, %.3f, %.2f, %.2f, %d'%('vs', answer, resp, rt*1000, trial['c'], NN, 0)])
+                fi.writerow(['%s, %s, %s, %.3f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d'%('vs', answer, resp, rt*1000, 
+                                trial['c'], trial['p'], trial['x1'],trial['y1'],trial['x2'],trial['y2'],0)])
             if i!=0 and i%(int(len(trial_list)/4))==0:
                 blockbreak(win, i/int((len(trial_list)/4)))
             core.wait(timing['intertrial'])
@@ -447,12 +428,12 @@ def run_memory(win,fi, setSize=3):
               'blank': 2,
               'recall': 6 ,
               'intertrial': 1.0}
-#
-    orientation = [-50,-25,25,50] #staircase #as used in Bayes(2008)
-    constant = [0.15] #Aaverage of vs condition
-    d1=[0.15]
+##
+    orientation = [-50,-25,-5,5,25,50] #staircase #as used in Bayes(2008)
+#    constant = [0.15] #Aaverage of vs condition
+#    d1=[0.15]
 
-    stim = Stimuli(win, timing, orientation)
+    stim = Stimuli(win, timing)
 
     stim.text_and_stim_keypress('Welcome to the attention and working memory study',pos=(0,0.7),
                                 stim=stim.ready)
@@ -468,26 +449,28 @@ def run_memory(win,fi, setSize=3):
 #        random.shuffle(trial_types)
 #        trial_list = []
     # construct trials
-    trial_type=[]
-    trial_type =trial_type+ list(itertools.product(constant,d1,orientation))
-    trial_list=[]
-    for i in range(len(trial_type)):
+    
+    triallist=[]
+    for i in range(len(orientation)):
         trial = {}
-        trial['c'] = trial_type[i][0]
-        trial['d1'] = trial_type[i][1]
-        trial['ori'] = trial_type[i][2]
-        trial['level'] = 'd2_2'
-        trial_list.append(trial)
+        trial['x1'] =0.9
+        trial['y1'] = 0
+        trial['x2'] = -0.8
+        trial['y2'] = 0
+        trial['p'] = 1.7
+        trial['c'] = 0.9
+        trial['ori'] = orientation[i]
+        triallist.append(trial)
 
-    trial_list=trial_list*8 #inclement trial numbers
+    triallist=triallist*8 #inclement trial numbers
 
-    shuffle(trial_list)
-    print (len(trial_list))
+    shuffle(triallist)
+    print (len(triallist))
     # run trials
-    for i, trial in enumerate(trial_list):
+    for i, trial in enumerate(triallist):
         try:
-            target, p = stim.search_array(trial,condition='memory',setSize=setSize)
-            resp, answer, rt, NN = stim.recall(target=target, orientation=trial['ori'], p=p)
+            target = stim.search_array(trial,condition='memory',setSize=setSize)
+            resp, answer, rt = stim.recall(target=target, orientation=trial['ori'])
             corr = (resp == answer)
             if not corr:
                 if resp == 'timeout':
@@ -495,9 +478,10 @@ def run_memory(win,fi, setSize=3):
                 else:
                     stim.text('Incorrect',max_wait=0.6)  
             if fi is not None:
-                fi.writerow(['%s, %s, %s, %.3f, %.2f, %.2f, %d'%('memory', answer, resp, rt*1000, trial['c'], NN, trial['ori'])])
-            if i!=0 and i%(int(len(trial_list)/4))==0:
-                blockbreak(win, i/int((len(trial_list)/4)))
+                fi.writerow(['%s, %s, %s, %.3f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d'%('vs', answer, resp, rt*1000, 
+                                trial['c'], trial['p'], trial['x1'],trial['y1'],trial['x2'],trial['y2'],trial['ori'])])
+            if i!=0 and i%(int(len(triallist)/4))==0:
+                blockbreak(win, i/int((len(triallist)/4)))
             core.wait(timing['intertrial'])
         except Exception as err:
             if err =='quiting':
@@ -526,7 +510,7 @@ def get_settings():
         outName='P%s_%s_%s.csv'%(data['PID'],data['condition'],data['expdate'])
         outFile = open(outName, 'wb')
         outWr = csv.writer(outFile, delimiter=';', lineterminator='\n', quotechar=' ', quoting=csv.QUOTE_MINIMAL) # a .csv file with that name. Could be improved, but gives us some control
-        outWr.writerow(['%s, %s, %s, %s, %s,%s, %s'%('condition', 'answer', 'response', 'RT', 'N/T similarity','N/N similarity','orientation')]) # write out header
+        outWr.writerow(['%s, %s, %s, %s, %s,%s, %s, %s, %s,%s, %s'%('condition', 'answer', 'response', 'RT', 'N/T similarity','N/N similarity','x1','y1','x2','y2','orientation')]) # write out header
         return outWr, outFile, data['condition']
     else: 
         return None,None,data['condition']
