@@ -82,10 +82,11 @@ class Stimuli:
  
 
     #adjust distractor difficulty and draw search array 
-    def search_array(self, trial, condition, target=None, ori=0,setSize=6):#trial contains [c, d1, ori, hard or easy(d1 or d2)]
+    def search_array(self, trial, condition, target=None, ori=0,setSize=4):#trial contains [c, d1, ori, hard or easy(d1 or d2)]
         self.draw_fixation()
-        draw_objs = [] 
-        stimpos = list(itertools.product(np.linspace(-0.25*setSize/2,0.25*setSize/2,num=setSize),np.linspace(-0.25*setSize/2,0.25*setSize/2,num=setSize))) #set1
+        draw_objs = [] ; display_dis = 0.2
+        stimpos = list(itertools.product(np.linspace(-display_dis*setSize/2,display_dis*setSize/2,num=setSize),
+                                         np.linspace(-display_dis*setSize/2,display_dis*setSize/2,num=setSize))) #set1
         orilist = [-25,-5,0,5,25]#25 degree step, ramdomize memory array orientations
         stimori = np.random.choice(orilist)#randomly rotate the whole array
         
@@ -253,9 +254,9 @@ class Stimuli:
         self.win.flip()
 
 
-def blockbreak(win, num):#create a break in between trials and present progress message
+def blockbreak(win, num, total):#create a break in between trials and present progress message
     msg1 = visual.TextStim(win,'Well done!',color=(1.0,1.0,1.0),units='norm', height=0.07, pos=(0,0.1),wrapWidth=1)
-    msg2 = visual.TextStim(win,str(num)+'/4 block completed',color=(1.0,1.0,1.0),units='norm', height=0.07, pos=(0,0),wrapWidth=2)
+    msg2 = visual.TextStim(win,str(num)+'/%d block completed'%(total),color=(1.0,1.0,1.0),units='norm', height=0.07, pos=(0,0),wrapWidth=2)
     msg3 = visual.TextStim(win,'Press Enter to continue',color=(1.0,1.0,1.0),units='norm', height=0.07, pos=(0,-0.1),wrapWidth=2)
     msg1.draw()
     msg2.draw()
@@ -343,36 +344,17 @@ def run_vs(win, fi=None,setSize=3):
               'blank': 2,
               'recall': 4 ,
               'intertrial': 1.0}
-#
-#    orientation = [0]
-#    constant = list(np.arange(0.08,0.25,0.02)) #set N/T similarity, step is .02
-#    d1=[] #set D1/T similarity
-#    for i in range(len(constant)):
-#        a=list(np.arange(0.1,0.2,0.01)) #step is .01
-#        d1.append([x for x in a if x<0.2])
-#    
+
     stim = Stimuli(win, timing)
 
     stim.text_and_stim_keypress('Welcome to the attention and working memory study',pos=(0,0.7),
                                 stim=stim.ready)
     stim.text_and_stim_keypress('This is a visual search task',pos=(0,0.7),
                                 stim=stim.fixation)
-#
-#    trial_type=[]
-#    for i in range(len(constant)):
-#        trial_type =trial_type+ list(itertools.product([constant[i]],d1[i],orientation))
-#
-#    for i in range(len(trial_type)):
-#        trial = {}
-#        trial['c'] = trial_type[i][0]
-#        trial['d1'] = trial_type[i][1]
-#        trial['ori'] = trial_type[i][2]
-#        trial['level'] = 'd2_1'
-#        trial_list.append(trial)
-        
+
 #    triallist = stimulirule(trial_list) #get rid of trials that do not conform to selection rules
     a,b,c = trialGen(1,0.1)
-    p, parameters = stimulirule(c,0.4) #0.5 = +/- 90 degree
+    p, parameters = stimulirule(c,0.45) #0.5 = +/- 90 degree
     triallist=[]
     for i in range(len(parameters)):
         trial = {}
@@ -391,7 +373,7 @@ def run_vs(win, fi=None,setSize=3):
         trial['target']=0
         trial_list.append(copy(trial))
     
-    trial_list=trial_list*4 #inclement trial numbers
+    trial_list=trial_list*5 #inclement trial numbers
     shuffle(trial_list)
     print (len(trial_list))
     # run trials
@@ -407,10 +389,10 @@ def run_vs(win, fi=None,setSize=3):
                    # condition', 'answer', 'response', 'RT', 'N/T similarity','N/N similarity','orientation'
             
             if fi is not None:
-                fi.writerow(['%s, %s, %s, %s, %.3f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d'%('vs', answer, resp, corr, rt*1000, 
+                fi.writerow(['%s, %s, %s, %d, %.3f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d'%('vs', answer, resp, int(corr), rt*1000, 
                                 trial['c'], trial['p'], trial['x1'],trial['y1'],trial['x2'],trial['y2'],0)])
-            if i!=0 and i%(int(len(trial_list)/4))==0:
-                blockbreak(win, i/int((len(trial_list)/4)))
+            if i!=0 and i%(int(len(trial_list)/3))==0:
+                blockbreak(win, i/int((len(trial_list)/3)), 3)
             core.wait(timing['intertrial'])
         except Exception as err:
             if err =='quiting':
@@ -418,16 +400,13 @@ def run_vs(win, fi=None,setSize=3):
             else:
                 traceback.print_exc()
                 raise Exception(err)
-
-
-            
+      
             
     stim.text_and_stim_keypress('Congratulations! You have finished.',
                                         max_wait=2.0)
 
 
 def run_memory(win,fi, setSize=3):
-#    (expname, sid, numblocks, speed, mark_mode, input_mode) = get_settings()
     
     win.flip()
     timing = {'fixation': 0.8,
@@ -436,9 +415,7 @@ def run_memory(win,fi, setSize=3):
               'recall': 6 ,
               'intertrial': 1.0}
 ##
-    orientation = [-50,-25,-5,5,25,50] #staircase #as used in Bayes(2008)
-#    constant = [0.15] #Aaverage of vs condition
-#    d1=[0.15]
+    
 
     stim = Stimuli(win, timing)
 
@@ -447,16 +424,8 @@ def run_memory(win,fi, setSize=3):
     stim.text_and_stim_keypress('This is a memory task',pos=(0,0.7),
                                 stim=stim.fixation)
 
-    # construct blocks
-#    for block_num in range(numblocks):
-#        block = {}
-#        block['speed_factor'] = speed
-#        block['block_num'] = block_num
-#        block['cue_color'] = random.choice(colors.keys())
-#        random.shuffle(trial_types)
-#        trial_list = []
     # construct trials
-    
+    orientation = [-50,-25,-5,5,25,50] #staircase #as used in Bayes(2008)
     triallist=[]
     for i in range(len(orientation)):
         trial = {}
@@ -485,10 +454,10 @@ def run_memory(win,fi, setSize=3):
                 else:
                     stim.text('Incorrect',max_wait=0.6)  
             if fi is not None:
-                fi.writerow(['%s, %s, %s, %s,%.3f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d'%('vs', answer, resp, corr, rt*1000, 
+                fi.writerow(['%s, %s, %s, %d,%.3f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d'%('vs', answer, resp, int(corr), rt*1000, 
                                 trial['c'], trial['p'], trial['x1'],trial['y1'],trial['x2'],trial['y2'],trial['ori'])])
-            if i!=0 and i%(int(len(triallist)/4))==0:
-                blockbreak(win, i/int((len(triallist)/4)))
+            if i!=0 and i%(int(len(triallist)/2))==0:
+                blockbreak(win, i/int((len(triallist)/2)), 2)
             core.wait(timing['intertrial'])
         except Exception as err:
             if err =='quiting':
