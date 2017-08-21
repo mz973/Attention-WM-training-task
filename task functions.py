@@ -11,7 +11,7 @@ to-do:
 #imports
 from psychopy import visual,core,gui,event
 from datetime import datetime
-import itertools, csv, sys, os.path, traceback
+import itertools, csv, traceback
 from random import shuffle
 import numpy as np
 from copy import copy
@@ -24,7 +24,7 @@ class Stimuli:
         self.win = win
         self.timing = timing
 
-        self.ready = visual.TextStim(win,'ready?', color=(1.0,1.0,1.0),units='norm', height=0.08, pos=(0,0),wrapWidth=1)
+        self.ready = visual.TextStim(win,'Ready?', color=(1.0,1.0,1.0),units='norm', height=0.08, pos=(0,0),wrapWidth=1)
         self.sure = visual.TextStim(win,'Are you sure? Press Escape to exit, press Enter to resume experiment.',
                                         color=(1.0,1.0,1.0),units='norm', height=0.07, pos=(0,0),wrapWidth=2)
         
@@ -34,14 +34,14 @@ class Stimuli:
                                         pos=(0, 0), height=0.1,
                                         color=[255, 255, 255], colorSpace='rgb255',
                                         wrapWidth=3)
-        self.probe = visual.TextStim(self.win,text='anticlockwise or clockwise?',
+        self.probe = visual.TextStim(self.win,text='z: anticlockwise   m: clockwise',
                                      font='Helvetica', alignHoriz='center', alignVert='center',
                                      units='norm',pos=(0, 0.8), height=0.08,
-                                     color=[255, 255, 255], colorSpace='rgb255',wrapWidth=3)
-        self.probe_vs = visual.TextStim(self.win,text='target present or not?',
+                                     color=[255, 255, 255], colorSpace='rgb255',wrapWidth=4)
+        self.probe_vs = visual.TextStim(self.win,text='z: target present   m: target not present',
                                      font='Helvetica', alignHoriz='center', alignVert='center',
                                      units='norm',pos=(0, 0.8), height=0.08,
-                                     color=[255, 255, 255], colorSpace='rgb255',wrapWidth=3)
+                                     color=[255, 255, 255], colorSpace='rgb255',wrapWidth=4)
         self.recall_keymap = {'z': 'anticlockwise', 'm': 'clockwise'}
         self.vs_keymap = {'z': 'yes', 'm': 'no'}
         
@@ -86,7 +86,7 @@ class Stimuli:
         self.draw_fixation()
         draw_objs = [] 
         stimpos = list(itertools.product(np.linspace(-0.25*setSize/2,0.25*setSize/2,num=setSize),np.linspace(-0.25*setSize/2,0.25*setSize/2,num=setSize))) #set1
-        orilist = [-50,-25,-5,5,25,50]#25 degree step, ramdomize memory array orientations
+        orilist = [-25,-5,0,5,25]#25 degree step, ramdomize memory array orientations
         stimori = np.random.choice(orilist)#randomly rotate the whole array
         
         #map(lambda x:x*10,stimori)
@@ -252,12 +252,6 @@ class Stimuli:
                 raise Exception('quiting')
         self.win.flip()
 
-def stimulirule(parameter, yrule):#get rid of trial types (d1,d2,c) that do not conform to set rules
-    trial_list=[]
-    for i in (parameter.shape[0]):
-        if abs(parameter[i][1]) <= yrule and abs(parameter[i][3])<=yrule and parameter[i][0]!=parameter[i][2]:
-            trial_list.append(trial)
-    return trial_list
 
 def blockbreak(win, num):#create a break in between trials and present progress message
     msg1 = visual.TextStim(win,'Well done!',color=(1.0,1.0,1.0),units='norm', height=0.07, pos=(0,0.1),wrapWidth=1)
@@ -281,6 +275,18 @@ def autoDraw_on(stim):
 def autoDraw_off(stim):
     stim.autoDraw = False
     return stim
+
+#to be used after trialGen    
+def stimulirule(parameter, yrule):#parameters format: x1 y1 x2 y2, yrule to control orientation to be <90 degree
+    triallist=[]; P = []
+    for i in range(parameter.shape[0]):
+        if abs(parameter[i,1]) <= yrule and abs(parameter[i,3])<=yrule and parameter[i,0]!=parameter[i,2]:
+            triallist.append(parameter[i,:])
+            P.extend([abs(parameter[i,0]-parameter[i,2])+abs(parameter[i,1]-parameter[i,3])])
+            P = [round(x,2) for x in P]
+    P,indice = np.unique(P,return_index=True)
+    triallist = np.array(triallist)[indice]
+    return P, np.array(triallist)
 
 #ideally this function takes 2 similarity index directly 
 #and generate eligible trials.
@@ -317,7 +323,7 @@ def trialGen(c,p): #c is NT similarity, p is NN similarity    #0<c<2; 0<p<4, d1,
                 P.extend(temp)
                 triallist.append([x,y,x2_1[i],y2_1[i]])
                 triallist.append([x,y,x2_1[i],y2_2[i]])
-                triallist.append([x,y,x2_1[i],y2_1[i]])
+                triallist.append([x,y,x2_2[i],y2_1[i]])
                 triallist.append([x,y,x2_2[i],y2_2[i]])
         P = [round(x,2) for x in P]
         P,indice = np.unique(P,return_index=True)
@@ -365,7 +371,8 @@ def run_vs(win, fi=None,setSize=3):
 #        trial_list.append(trial)
         
 #    triallist = stimulirule(trial_list) #get rid of trials that do not conform to selection rules
-    p, parameters = trialGen(1.2,0.2)
+    a,b,c = trialGen(1,0.1)
+    p, parameters = stimulirule(c,0.4) #0.5 = +/- 90 degree
     triallist=[]
     for i in range(len(parameters)):
         trial = {}
@@ -374,7 +381,7 @@ def run_vs(win, fi=None,setSize=3):
         trial['x2'] = parameters[i][2]
         trial['y2'] = parameters[i][3]
         trial['p'] = p[i]
-        trial['c'] = 1.2
+        trial['c'] = 1
         triallist.append(trial)
     trial_list = []
     for i,trial in enumerate(triallist): #half trials have target, half do not
@@ -400,7 +407,7 @@ def run_vs(win, fi=None,setSize=3):
                    # condition', 'answer', 'response', 'RT', 'N/T similarity','N/N similarity','orientation'
             
             if fi is not None:
-                fi.writerow(['%s, %s, %s, %.3f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d'%('vs', answer, resp, rt*1000, 
+                fi.writerow(['%s, %s, %s, %s, %.3f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d'%('vs', answer, resp, corr, rt*1000, 
                                 trial['c'], trial['p'], trial['x1'],trial['y1'],trial['x2'],trial['y2'],0)])
             if i!=0 and i%(int(len(trial_list)/4))==0:
                 blockbreak(win, i/int((len(trial_list)/4)))
@@ -453,12 +460,12 @@ def run_memory(win,fi, setSize=3):
     triallist=[]
     for i in range(len(orientation)):
         trial = {}
-        trial['x1'] =0.9
+        trial['x1'] =0.5
         trial['y1'] = 0
-        trial['x2'] = -0.8
+        trial['x2'] = -0.5
         trial['y2'] = 0
-        trial['p'] = 1.7
-        trial['c'] = 0.9
+        trial['p'] = 1
+        trial['c'] = 1
         trial['ori'] = orientation[i]
         triallist.append(trial)
 
@@ -478,7 +485,7 @@ def run_memory(win,fi, setSize=3):
                 else:
                     stim.text('Incorrect',max_wait=0.6)  
             if fi is not None:
-                fi.writerow(['%s, %s, %s, %.3f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d'%('vs', answer, resp, rt*1000, 
+                fi.writerow(['%s, %s, %s, %s,%.3f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d'%('vs', answer, resp, corr, rt*1000, 
                                 trial['c'], trial['p'], trial['x1'],trial['y1'],trial['x2'],trial['y2'],trial['ori'])])
             if i!=0 and i%(int(len(triallist)/4))==0:
                 blockbreak(win, i/int((len(triallist)/4)))
@@ -510,7 +517,7 @@ def get_settings():
         outName='P%s_%s_%s.csv'%(data['PID'],data['condition'],data['expdate'])
         outFile = open(outName, 'wb')
         outWr = csv.writer(outFile, delimiter=';', lineterminator='\n', quotechar=' ', quoting=csv.QUOTE_MINIMAL) # a .csv file with that name. Could be improved, but gives us some control
-        outWr.writerow(['%s, %s, %s, %s, %s,%s, %s, %s, %s,%s, %s'%('condition', 'answer', 'response', 'RT', 'N/T similarity','N/N similarity','x1','y1','x2','y2','orientation')]) # write out header
+        outWr.writerow(['%s, %s, %s, %s, %s, %s,%s, %s, %s, %s,%s, %s'%('condition', 'answer', 'response', 'correct', 'RT', 'N/T disimilarity','N/N disimilarity','x1','y1','x2','y2','orientation')]) # write out header
         return outWr, outFile, data['condition']
     else: 
         return None,None,data['condition']
@@ -526,7 +533,7 @@ def close(win, fname=None):
     event.waitKeys(keyList=['return'])    
     win.close()     #close the psychopy windo
     core.quit()
-    print "all tests concluded"    
+    print ("all tests concluded")    
 
 
 
