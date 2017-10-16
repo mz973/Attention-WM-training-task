@@ -338,16 +338,16 @@ def trialGen(c,p): #c is NT disimilarity, p is NN disimilarity    #0<c<2; 0<p<4,
         
 
 #c is constant, c=|y1|+|y2|
-#randomize bar position but keep it constant, one orientation difference value can have multiple composition
+#randomize bar position, one orientation difference value can have multiple composition
 def trialGen_ori(c,limit, step):   #randomize bar position   #0<c<2; d2 <1 (max is 180 degree), limit is the max orientation a distractor has
     triallist=[] #triallist: x1, y1,x2,y2
     p = []; C=[]
     d2 = np.arange(0,limit,step) #only works when c > max(d2)
     for y in d2:
-        y1 = np.array([(-1*c-y)/2,(c-y)/2, round(np.random.uniform(-0.4,0.4),2)]) #first 2 elements allows the same c, 3rd one doesn't
+        y1 = np.array([(-1*c-y)/2,(c-y)/2, round(np.random.uniform(-0.4,0.4),2),round(np.random.uniform(-0.4,0.4),2)]) #first 2 elements allows the same c, 3rd one doesn't
         y2 = y1+y
-        x1 = np.round(np.random.uniform(0.5,0.7,3),1) #bar position is jittered but always >0.5
-        x2 = np.round(np.random.uniform(0.5,0.7,3),1)  * np.array([-1,-1,-1])
+        x1 = np.round(np.random.uniform(0.5,0.7,4),1) #bar position is jittered but always >0.5
+        x2 = np.round(np.random.uniform(0.5,0.7,4),1)  * np.array([-1,-1,-1,-1])
         for each in zip(x1,y1,x2,y2):
             triallist.append(each)
             p.append(abs(each[1]-each[3]))
@@ -374,7 +374,7 @@ def run_vs(win, fi=None,setSize=3):
 
 #    a,b,c = trialGen(1,0.1)
 #    p, parameters = stimulirule(c,0.45) #0.5 = +/- 90 degree
-    c, p, parameters = trialGen_ori(0.8, 0.8, 0.1) #c is mean NT disimilarity(only y), p is NN(only y), parameters has x1,y1,x2,y2
+    c, p, parameters = trialGen_ori(0.7, 0.7, 0.1) #c is mean NT disimilarity(only y), p is NN(only y), parameters has x1,y1,x2,y2
     triallist=[]
     for i in range(len(parameters)):
         trial = {}
@@ -411,8 +411,8 @@ def run_vs(win, fi=None,setSize=3):
             if fi is not None:
                 fi.writerow(['%s, %s, %s, %d, %.3f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d'%('vs', answer, resp, int(corr), rt*1000, 
                                 trial['c'], trial['p'], trial['x1'],trial['y1'],trial['x2'],trial['y2'],0)])
-            if i!=0 and i%(int(len(trial_list)/3))==0:
-                blockbreak(win, i/int((len(trial_list)/3)), 3)
+            if i!=0 and i%(int(len(trial_list)/4))==0:
+                blockbreak(win, i/int((len(trial_list)/4)), 4)
             core.wait(timing['intertrial'])
         except Exception as err:
             if err =='quiting':
