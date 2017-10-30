@@ -73,8 +73,9 @@ class Stimuli:
 #        c  mean N/T similarity 0< c <0.2
 #        d1# D1/T similarity 0< d1 <c
     def make_stim (self, x, y, target=0,size=0.2, lw=1.5 ):  
-        d1 = x*0.2
-        vertice = [(0, 0), (.2-d1, 0), (.2-d1, .4),(.2-d1, 0),(.4,0)] #bar length is 0.4
+        bar_length = 0.25
+        d1 = x*bar_length/2
+        vertice = [(0, 0), (bar_length/2-d1, 0), (bar_length/2-d1, bar_length),(bar_length/2-d1, 0),(bar_length,0)] #bar length 
         
         return visual.ShapeStim(self.win, vertices=vertice,
                                 closeShape=False, lineWidth=lw, 
@@ -84,7 +85,8 @@ class Stimuli:
     #adjust distractor difficulty and draw search array 
     def search_array(self, trial, condition, target=None, ori=0,setSize=4):#trial contains [c, d1, ori, hard or easy(d1 or d2)]
         self.draw_fixation()
-        draw_objs = [] ; display_dis = 0.2
+        draw_objs = [] ; display_dis = 0.15
+        
         stimpos = list(itertools.product(np.linspace(-display_dis*setSize/2,display_dis*setSize/2,num=setSize),
                                          np.linspace(-display_dis*setSize/2,display_dis*setSize/2,num=setSize))) #set1
         orilist = [-25,-5,0,5,25]#25 degree step, ramdomize memory array orientations
@@ -237,12 +239,12 @@ class Stimuli:
         display_text = visual.TextStim(self.win, text=text,
                                        font='Helvetica', alignHoriz='center',
                                        alignVert='center', units='norm',
-                                       pos=(0,-0.8), height=0.08,
+                                       pos=(0,0), height=0.1,
                                        color=[255, 255, 255], colorSpace='rgb255',
                                        wrapWidth=3)
                                 
         if image is not None:
-            display_image = visual.ImageStim(win,image='cryingface.jpg',pos=(0.3,-0.8), size=0.1,units='norm')
+            display_image = visual.ImageStim(win,image='cryingface.jpg',pos=(0.22,0), size=0.08,units='norm')
             display_image.draw()
         display_text.draw()
         self.win.flip()
@@ -255,7 +257,7 @@ class Stimuli:
 
 
 def blockbreak(win, num, total):#create a break in between trials and present progress message
-    msg1 = visual.TextStim(win,'Well done!',color=(1.0,1.0,1.0),units='norm', height=0.07, pos=(0,0.1),wrapWidth=1)
+    msg1 = visual.TextStim(win,'Well done!',color=(1.0,1.0,1.0),units='height', height=0.07, pos=(0,0.1),wrapWidth=1)
     msg2 = visual.TextStim(win,str(num)+'/%d block completed'%(total),color=(1.0,1.0,1.0),units='norm', height=0.07, pos=(0,0),wrapWidth=2)
     msg3 = visual.TextStim(win,'Press Return to continue',color=(1.0,1.0,1.0),units='norm', height=0.07, pos=(0,-0.1),wrapWidth=2)
     msg1.draw()
@@ -267,7 +269,7 @@ def blockbreak(win, num, total):#create a break in between trials and present pr
 
 def get_window(width):
     return visual.Window([width,width],
-        winType='pyglet', monitor="testMonitor",fullscr=False, colorSpace='rgb',color=(-1,-1,-1),units='norm')
+        winType='pyglet', monitor="testMonitor",fullscr=True, colorSpace='rgb',color=(-1,-1,-1),units='height')
 
 def autoDraw_on(stim):
     stim.autoDraw = True
@@ -530,7 +532,7 @@ def close(win, fname=None):
 
 if __name__ == '__main__':
     filewriter, fname , condition = get_settings()
-    win = get_window(800)
+    win = get_window(1200)
     if condition=='memory':
         try:
             run_memory(win,filewriter,setSize=3)
