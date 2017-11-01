@@ -268,8 +268,10 @@ def blockbreak(win, num, total):#create a break in between trials and present pr
     win.flip()
 
 def get_window(width):
-    return visual.Window([width,width],
+    win = visual.Window([width,width],
         winType='pyglet', monitor="testMonitor",fullscr=True, colorSpace='rgb',color=(0,0,0),units='height')
+    event.Mouse(visible=False)
+    return win
 
 def autoDraw_on(stim):
     stim.autoDraw = True
