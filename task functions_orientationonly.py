@@ -269,7 +269,7 @@ def blockbreak(win, num, total):#create a break in between trials and present pr
 
 def get_window(width):
     return visual.Window([width,width],
-        winType='pyglet', monitor="testMonitor",fullscr=True, colorSpace='rgb',color=(-1,-1,-1),units='height')
+        winType='pyglet', monitor="testMonitor",fullscr=True, colorSpace='rgb',color=(0,0,0),units='height')
 
 def autoDraw_on(stim):
     stim.autoDraw = True
@@ -376,7 +376,7 @@ def run_vs(win, fi=None,setSize=3):
 
 #    a,b,c = trialGen(1,0.1)
 #    p, parameters = stimulirule(c,0.45) #0.5 = +/- 90 degree
-    c, p, parameters = trialGen_ori(0.7, 0.7, 0.1) #c is mean NT disimilarity(only y), p is NN(only y), parameters has x1,y1,x2,y2
+    c, p, parameters = trialGen_ori(0.5, 0.45, 0.05) #c is mean NT disimilarity(only y), p is NN(only y), parameters has x1,y1,x2,y2
     triallist=[]
     for i in range(len(parameters)):
         trial = {}
@@ -387,15 +387,15 @@ def run_vs(win, fi=None,setSize=3):
         trial['p'] = p[i]
         trial['c'] = c[i]
         triallist.append(trial)
-    trial_list = []
+    trial_list1 = []; trial_list2=[]
     for i,trial in enumerate(triallist): #half trials have target, half do not
         trial['target']=1
-        trial_list.append(copy(trial))
+        trial_list1.append(copy(trial))
     for i,trial in enumerate(triallist): #half trials have target, half do not
         trial['target']=0
-        trial_list.append(copy(trial))
+        trial_list2.append(copy(trial))
     
-    trial_list=trial_list*5 #inclement trial numbers
+    trial_list=trial_list1*6+ trial_list2*3 #inclement trial numbers
     shuffle(trial_list)
     print (len(trial_list))
     # run trials
