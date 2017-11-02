@@ -10,61 +10,204 @@ Analyzing data from Attention-WM paradigm
 import glob, os
 import pandas as pd
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 
 #import data
 path ='/Users/mz/Documents/GitHub/Attention-WM-training-task'
-filenames_memory = glob.glob(os.path.join(path ,"pilot*_memory*.csv"))
-filenames_vs = glob.glob(os.path.join(path ,"pilot*_vs*.csv"))
+filenames_memory = glob.glob(os.path.join(path ,"Ppilot*_T2_memory*.csv"))
+filenames_vs = glob.glob(os.path.join(path ,"Ppilot*_T3_vs*.csv"))
 df_memory = pd.concat((pd.read_csv(f,header=0) for f in filenames_memory))
 df_vs = pd.concat((pd.read_csv(f,header=0) for f in filenames_vs))
-names = list(df_memory.columns)#'condition', 'answer', 'response', 'RT', 'N/T similarity','N/N similarity','orientation'
-df_memory['correct'] = np.where(df_memory['  answer']==df_memory[ '  response'], 1, 0) #add a column where correct response is coded 1, incorrect as 0
-df_memory['answer'] = np.where(df_memory['  answer']=='  clockwise', 1, 0)#code trial type clockwise=1
-data_memory = np.array(df_memory.values[:,3:],dtype='float') #get column 3-end
-df_vs['correct'] = np.where(df_vs['  answer']==df_vs[ '  response'], 1, 0)#for weird reason there're whitespace before column names
-df_vs['answer'] = np.where(df_vs['  answer']=='  yes', 1, 0)#code trial type target present=1
+names = list(df_vs.columns)#condition', 'answer', 'response', 'correct', 'RT', 'N/T disimilarity','N/N disimilarity','x1','y1','x2','y2','orientation'
+#df_memory['correct'] = np.where(df_memory['  answer']==df_memory[ '  response'], 1, 0) #add a column where correct response is coded 1, incorrect as 0
+df_memory['trialtype'] = np.where(df_memory['  answer']=='  clockwise', 1, 0)#code response clockwise=1
+df_memory['responsetype'] = np.where(df_memory['  response']=='  clockwise', 1, 0)#code response clockwise=1
+
+data_memory = np.array(df_memory.values[:,3:],dtype='float') #get column after 3
+#df_vs['correct'] = np.where(df_vs['  answer']==df_vs[ '  response'], 1, 0)#for weird reason there're whitespace before column names
+df_vs['trialtype'] = np.where(df_vs['  answer']=='  yes', 1, 0)#code trial type target present=1
+df_vs['x_dif'] = abs(df_vs['  x1']-df_vs['  x2'])
+df_vs['y_dif'] = abs(df_vs['  y1']-df_vs['y2'])
+
 data_vs = np.array(df_vs.values[:,3:],dtype='float')
-data_vs[0:432,0]=data_vs[0:432,0]*1000 #first file RT is in second, need to transform into ms
 
-#column: RT, NT, NN, orientation, correct, trial type
+#data_vs[0:432,0]=data_vs[0:432,0]*1000 #first file RT is in second, need to transform into ms
+
+#column: correct, RT, NT, NN, x1, y1,x2, y2, orientation, trial type, x_dif, y_dif
 #accuracy
-print('visual search accuracy: ', np.count_nonzero(data_vs[:,4]==1)/data_vs.shape[0])
-print('memory accuracy: ',np.count_nonzero(data_memory[:,4]==1)/data_memory.shape[0])
+print('visual search accuracy: ', np.count_nonzero(data_vs[:,0]==1)/data_vs.shape[0])
+print('memory accuracy: ',np.count_nonzero(data_memory[:,0]==1)/data_memory.shape[0])
 
-np.mean(data_vs[np.logical_and(df_vs['  answer']=='  yes',df_vs['correct']==0)][:,0]) #calculate mean RT, select trial type + correct/incorrect response
+np.mean(data_vs[np.logical_and(df_vs['  correct']==0 ,df_vs['trialtype']==1)][:,1]) #calculate mean RT, select trial type + correct/incorrect response
 np.mean(data_vs[np.logical_and(df_vs['  answer']=='  no',df_vs['correct']==0)][:,0]) 
 np.mean(data_vs[np.where(df_vs['  answer']=='  no', True, False)][:,0])
-meanRT = [] #calculate RT for each unique NT, NN similarity and trial type 
-for i, similarity in enumerate(np.unique(data_vs[:,[1,2,5]],axis=0)):
-    meanRT.append(np.mean(data_vs[np.where((data_vs[:,[1,2,5]]==similarity).all(axis=1))[0]][:,0]))
-    print(similarity,np.mean(data_vs[np.where((data_vs[:,[1,2,5]]==similarity).all(axis=1))[0]][:,0]))
+
+meanRT = [] #calculate RT for each unique NN similarity and trial type 
+correct = np.array([1])
+for i, similarity in enumerate(np.unique(data_vs[:,[3,9]],axis=0)):#
+    meanRT.append(np.mean(data_vs[np.where((data_vs[:,[0,3,9]]==np.append(correct,similarity)).all(axis=1))[0]][:,1])) #np.append([1]) to select only correct trials
+    print(similarity,np.mean(data_vs[np.where((data_vs[:,[0,3,9]]==np.append(correct,similarity)).all(axis=1))[0]][:,1]))
+
+""""""""""""""""""""""""""""""""""""
+#The code to perform individual analysis
+df_individual = []
+for f in filenames_vs:
+    df_individual.append(pd.read_csv(f,header=0))
+for i in df_individual:
+    i['trialtype']=np.where(i['  answer']=='  yes', 1, 0)
+    i['x_dif'] = abs(i['  x1']-i['  x2'])
+    i['y_dif'] = abs(i['  y1']-i['y2'])
+vslist=[]
+for i in df_individual:
+    vslist.append(np.array(i.values[:,3:],dtype='float'))
+RTlist=np.zeros((14,5)) #no. of trailtype by participants
+correct = np.array([1,0.7])
+for j, f in enumerate(vslist):
+    for i, similarity in enumerate(np.unique(f[:,[3,9]],axis=0)):#
+        RTlist[i,j] = np.mean(f[np.where((f[:,[0,2,3,9]]==np.append(correct,similarity)).all(axis=1))[0]][:,1]) #np.append([1]) to select only correct trials
+
+
+X = np.unique(data_vs[:,3],axis=0);  #N/N dissimilarity
+Ylist = RTlist[1::2,:] #target present for 5 participants [NT by subject]
+fitList=[np.polyfit(X[:4], Ylist[:4,y],1) for y in range(Ylist.shape[1])]
+fit_fnList = [np.poly1d(fit) for fit in fitList] 
+
+""""""""""""""""""""""""""""""""""""
 
 #plot RT as function of NT and NN similarity, separated by trial type
-X = np.unique(data_vs[:,[1,2]],axis=0)[:,0]; X.shape+=(1,) #N/T dissimilarity
-Y= np.unique(data_vs[:,[1,2]],axis=0)[:,1]; Y.shape+=(1,) #N/N dissimilarity
-Z= np.array(meanRT[1::2]);Z.shape+=(1,) #RT 1::2 is target present
+X = np.unique(data_vs[:,3],axis=0);  #N/N dissimilarity
+Y1 = np.array(meanRT[0::2]); #RT 0::2 is target not present
+Y2 = np.array(meanRT[1::2]);#RT 1::2 is target present
+fit1 = np.polyfit(X,Y1,1) #fit linear regression
+fit_fn1 = np.poly1d(fit1) 
+fit2 = np.polyfit(X,Y2,1)
+fit_fn2 = np.poly1d(fit2) 
+
+fit_half1 = np.polyfit(X[:4],Y1[:4],1) 
+fit_fn_half1 = np.poly1d(fit_half1) 
+fit_half2 = np.polyfit(X[:4],Y2[:4],1)
+fit_fn_half2 = np.poly1d(fit_half2) 
+
+
 fig = plt.figure()
-ax = Axes3D(fig) 
-ax.scatter(X,Y,Z)
-ax.set_zticks(np.arange(2000, 3500, 500))
-ax.set_yticks(np.arange(min(Y), max(Y)+0.2, 0.1))
-ax.set_xlabel('N/T dissimilarity'); ax.set_ylabel('N/N dissimilarity');ax.set_zlabel('RT')
+ax = fig.add_subplot(111)
+""""""""""""""""""""""""""""""""""""
+colors = matplotlib.cm.rainbow(np.linspace(0, 1, 5))
+for i in range(Ylist.shape[1]):
+    ax.scatter(X[:5],Ylist[:5,i],marker='o', c=colors[i])
+    ax.plot(X[:5],fit_fnList[i](X[:5]),c=colors[i])
+""""""""""""""""""""""""""""""""""""
+#ax.scatter(X,Y1,c='r', marker="s", label='no target')
+ax.scatter(X,Y2, c='black', marker="D", label='target')
+plt.legend(loc='upper left')
+#ax.set_yticks(np.arange(min(Y1), max(Y1)+0.2, 0.1))
+ax.set_xlabel('N/N dissimilarity'); ax.set_ylabel('RT')
+#ax.plot(X,fit_fn1(X),'--r')
+#ax.plot(X,fit_fn2(X),'--b')
+#ax.plot(X[:10],fit_fn1(X[:10]),'--r')
+ax.plot(X[:5],fit_fn_half2(X[:5]),'--b')
 plt.show()
 
+# use statsmodel regression to test significance of linear model 
+import statsmodels.api as sm
+
+predictor = sm.add_constant(X[:4])
+model = sm.OLS(Ylist[:4,2],predictor)
+results = model.fit()
+print (results.summary())
+#NN disimilarity is separated into x_dif and y_dif
+#are 2 predictors better than 1 overall predictor?
+# only y_dif significant, Rsquared = 0.3
+predictor = sm.add_constant(comb) 
+model = sm.OLS(Y2,predictor)
+results = model.fit()
+print (results.summary())
+
+#get RT per bar position difference
+meanRT_x = []
+for i, similarity in enumerate(np.unique(data_vs[:,[9,10]],axis=0)):
+    meanRT_x.append(np.mean(data_vs[np.where((data_vs[:,[0,9,10]]==np.append([1],similarity)).all(axis=1))[0]][:,1])) #np.append([1]) to select only correct trials
+    print(similarity,np.mean(data_vs[np.where((data_vs[:,[0,9,10]]==np.append([1],similarity)).all(axis=1))[0]][:,1]))
+
+X_x = np.unique(data_vs[:,10],axis=0);  #N/N dissimilarity
+Y1_x = np.array(meanRT_x[:18]); #RT 0::2 is target not present
+Y2_x = np.array(meanRT_x[18:]);#RT 1::2 is target present
+fit1_x = np.polyfit(X_x,Y1_x,1) #fit linear regression
+fit_fn1_x = np.poly1d(fit1_x) 
+fit2_x = np.polyfit(X_x,Y2_x,1)
+fit_fn2_x = np.poly1d(fit2_x) 
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+
+ax.scatter(X_x,Y1_x,c='r', marker="s", label='no target')
+ax.scatter(X_x,Y2_x, c='b', marker="o", label='target')
+plt.legend(loc='upper left')
+#ax.set_yticks(np.arange(min(Y1), max(Y1)+0.2, 0.1))
+ax.set_xlabel('bar position difference'); ax.set_ylabel('RT')
+ax.plot(X_x,fit_fn1_x(X_x),'--r')
+ax.plot(X_x,fit_fn2_x(X_x),'--b')
+plt.show()
+
+#mean RT per orientation differnece
+meanRT_y = []
+for i, similarity in enumerate(np.unique(data_vs[:,[9,11]],axis=0)):
+    meanRT_y.append(np.mean(data_vs[np.where((data_vs[:,[0,9,11]]==np.append([1],similarity)).all(axis=1))[0]][:,1])) #np.append([1]) to select only correct trials
+    print(similarity,np.mean(data_vs[np.where((data_vs[:,[0,9,11]]==np.append([1],similarity)).all(axis=1))[0]][:,1]))
+
+X_y = np.unique(data_vs[:,11],axis=0);  #N/N dissimilarity
+Y1_y = np.array(meanRT_y[:11]); #RT 0::2 is target not present
+Y2_y = np.array(meanRT_y[11:]);#RT 1::2 is target present
+fit1_y = np.polyfit(X_y,Y1_y,1) #fit linear regression
+fit_fn1_y = np.poly1d(fit1_y) 
+fit2_y = np.polyfit(X_y,Y2_y,1)
+fit_fn2_y = np.poly1d(fit2_y) 
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+
+ax.scatter(X_y,Y1_y,c='r', marker="s", label='no target')
+ax.scatter(X_y,Y2_y, c='b', marker="o", label='target')
+plt.legend(loc='upper left')
+#ax.set_yticks(np.arange(min(Y1), max(Y1)+0.2, 0.1))
+ax.set_xlabel('orientation difference'); ax.set_ylabel('RT')
+ax.plot(X_y,fit_fn1_y(X_y),'--r')
+ax.plot(X_y,fit_fn2_y(X_y),'--b')
+
+plt.show()
+
+#column: correct, RT, NT, NN, x1, y1,x2, y2, orientation, trial type, response type
 #memory precision as function of degree of orientation 
-meanAcc = [] # 
-for i, similarity in enumerate(np.unique(data_memory[:,[3,5]],axis=0)):
-    a = data_memory[np.where((data_memory[:,[3,5]]==similarity).all(axis=1))[0]][:,4]
-    acc = np.sum(a)/len(a)
-    meanAcc.append(acc)
-    print(similarity[0],acc)
+propCW = [] # proportion of trials judged clockwise
+for i, similarity in enumerate(np.unique(data_memory[:,8],axis=0)):
+    a = data_memory[np.where(data_memory[:,8]==similarity)[0]][:,10]
+    acc = np.sum(a)#/len(a)
+    propCW.append(acc)
+    print(similarity,acc)
+    
+import psignifit as ps #plot psychometric function
+data_fit=np.unique(data_memory[:,8],axis=0);data_fit.shape+=(1,)
+propCW = np.array(propCW); propCW.shape+=(1,)
+data_fit = np.append(data_fit,propCW,axis=1)
+a=np.ones([6,1])*8*5; data_fit = np.append(data_fit,a,axis=1) #a is total number of trials in each level
+
+options                = dict()
+options['sigmoidName'] = 'norm'   # choose a cumulative Gauss as the sigmoid
+options['expType']     = 'YesNo'   # choose 2-AFC as the paradigm of the experiment
+res = ps.psignifit(data_fit, options)
+ps.plot.plotPsych(res,xLabel='Orientation', yLabel='Proportion judged CW')
 
 fig = plt.figure()
-plt.scatter(np.unique(data_memory[:,3],axis=0), meanAcc,marker='.',color='blue')
-plt.axhline(y=0.5, xmin=0, xmax=1, hold=None,color='red')
+plt.scatter(np.unique(data_memory[:,1],axis=0), propCW,marker='.',color='blue')
+plt.axvline(x=0.5, ymin=0, ymax=1, hold=None,color='blue',linestyle='--')
 plt.xticks(np.arange(-55, 55, 10))
-plt.xlabel('orientation'); plt.ylabel('accuracy')
+plt.xlabel('Rotation(deg)'); plt.ylabel('Proportion of judged clockwise')
+
 plt.show()
+
+
+
+
